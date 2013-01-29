@@ -1412,6 +1412,9 @@ AudioPolicyManager::routing_strategy AudioPolicyManager::getStrategy(
         // while key clicks are played produces a poor result
     case AudioSystem::TTS:
     case AudioSystem::MUSIC:
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+    case AudioSystem::INCALL_MUSIC:
+#endif
 #ifdef QCOM_FM_ENABLED
     case AudioSystem::FM:
 #endif
@@ -2034,8 +2037,13 @@ AudioPolicyManagerBase::IOProfile *AudioPolicyManager::getProfileForDirectOutput
 {
     if( !((flags & AUDIO_OUTPUT_FLAG_LPA)   ||
           (flags & AUDIO_OUTPUT_FLAG_TUNNEL)||
-          (flags & AUDIO_OUTPUT_FLAG_VOIP_RX)) )
+          (flags & AUDIO_OUTPUT_FLAG_VOIP_RX)
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+          || (flags & AUDIO_OUTPUT_FLAG_INCALL_MUSIC)
+#endif
+          ) ) {
         flags = AUDIO_OUTPUT_FLAG_DIRECT;
+    }
 
     for (size_t i = 0; i < mHwModules.size(); i++) {
         if (mHwModules[i]->mHandle == 0) {
@@ -2133,6 +2141,11 @@ float AudioPolicyManager::computeVolume(int stream,
          device == AUDIO_DEVICE_OUT_PROXY)) {
         return 1.0;
     }
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+    if (stream == AudioSystem::INCALL_MUSIC) {
+        return 1.0;
+    }
+#endif
     return AudioPolicyManagerBase::computeVolume(stream, index, output, device);
 }
 

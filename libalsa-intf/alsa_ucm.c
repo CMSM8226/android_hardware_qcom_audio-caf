@@ -952,6 +952,14 @@ int getUseCaseType(const char *useCase)
             MAX_LEN(useCase,SND_USE_CASE_VERB_HIFI3)) ||
         !strncmp(useCase, SND_USE_CASE_VERB_DIGITAL_RADIO,
             MAX_LEN(useCase,SND_USE_CASE_VERB_DIGITAL_RADIO)) ||
+        !strncmp(useCase, SND_USE_CASE_VERB_INCALL_DELIVERY,
+            MAX_LEN(useCase,SND_USE_CASE_VERB_INCALL_DELIVERY)) ||
+        !strncmp(useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY,
+            MAX_LEN(useCase,SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY)) ||
+        !strncmp(useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2,
+            MAX_LEN(useCase,SND_USE_CASE_VERB_INCALL_DELIVERY2)) ||
+        !strncmp(useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2,
+            MAX_LEN(useCase,SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2)) ||
         !strncmp(useCase, SND_USE_CASE_MOD_PLAY_MUSIC,
             MAX_LEN(useCase,SND_USE_CASE_MOD_PLAY_MUSIC)) ||
         !strncmp(useCase, SND_USE_CASE_MOD_PLAY_LOWLATENCY_MUSIC,

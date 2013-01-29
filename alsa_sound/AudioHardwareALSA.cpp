@@ -1543,8 +1543,12 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
       return out;
     } else
 #endif
-    if ((flags & AUDIO_OUTPUT_FLAG_DIRECT) &&
-        ((devices == AUDIO_DEVICE_OUT_AUX_DIGITAL)
+    if ((flags & AUDIO_OUTPUT_FLAG_DIRECT)
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+        // additional check to make sure incall_music track are not routed to multi channel
+        && !(flags & AUDIO_OUTPUT_FLAG_INCALL_MUSIC)
+#endif
+        && ((devices == AUDIO_DEVICE_OUT_AUX_DIGITAL)
 #ifdef QCOM_WFD_ENABLED
         || (devices == AudioSystem::DEVICE_OUT_PROXY)
 #endif
@@ -1670,6 +1674,23 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
           } else {
                strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_PLAY_LOWLATENCY_MUSIC, sizeof(alsa_handle.useCase));
           }
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+      } else if (flags & AUDIO_OUTPUT_FLAG_INCALL_MUSIC) {
+          alsa_handle.channels = AUDIO_CHANNEL_OUT_MONO;
+          if (mVoiceCallState == CALL_LOCAL_HOLD) {
+               if ((use_case == NULL) || (!strcmp(use_case, SND_USE_CASE_VERB_INACTIVE))) {
+                    strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_INCALL_DELIVERY, sizeof(alsa_handle.useCase));
+               } else {
+                    strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY, sizeof(alsa_handle.useCase));
+               }
+          } else if (mVoice2CallState == CALL_LOCAL_HOLD) {
+               if ((use_case == NULL) || (!strcmp(use_case, SND_USE_CASE_VERB_INACTIVE))) {
+                    strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2, sizeof(alsa_handle.useCase));
+               } else {
+                    strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2, sizeof(alsa_handle.useCase));
+               }
+          }
+#endif
       } else
 #endif
       {
@@ -1692,6 +1713,21 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
           } else {
              snd_use_case_set(mUcMgr, "_enamod", SND_USE_CASE_MOD_PLAY_LOWLATENCY_MUSIC);
           }
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+      } else if (flags & AUDIO_OUTPUT_FLAG_INCALL_MUSIC) {
+          if(!strncmp(it->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY,
+             MAX_LEN(it->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY))) {
+             snd_use_case_set(mUcMgr, "_verb", SND_USE_CASE_VERB_INCALL_DELIVERY);
+          } else if(!strncmp(it->useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY,
+             MAX_LEN(it->useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY))) {
+             snd_use_case_set(mUcMgr, "_enamod", SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY);
+          } else if(!strncmp(it->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2,
+             MAX_LEN(it->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2))) {
+             snd_use_case_set(mUcMgr, "_verb", SND_USE_CASE_VERB_INCALL_DELIVERY2);
+          } else {
+             snd_use_case_set(mUcMgr, "_enamod", SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2);
+          }
+#endif
       } else
 #endif
       {
@@ -3311,6 +3347,18 @@ uint32_t AudioHardwareALSA::useCaseStringToEnum(const char *usecase)
                (!strncmp(usecase, SND_USE_CASE_MOD_PLAY_MUSIC,
                            MAX_LEN(usecase, SND_USE_CASE_MOD_PLAY_MUSIC)))) {
        activeUsecase = USECASE_HIFI;
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+    } else if ((!strncmp(usecase, SND_USE_CASE_VERB_INCALL_DELIVERY,
+                MAX_LEN(usecase, SND_USE_CASE_VERB_INCALL_DELIVERY)))||
+               (!strncmp(usecase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY,
+                MAX_LEN(usecase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY)))) {
+       activeUsecase = USECASE_HIFI_INCALL_DELIVERY;
+    } else if ((!strncmp(usecase, SND_USE_CASE_VERB_INCALL_DELIVERY2,
+                MAX_LEN(usecase, SND_USE_CASE_VERB_INCALL_DELIVERY2)))||
+               (!strncmp(usecase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2,
+                MAX_LEN(usecase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2)))) {
+       activeUsecase = USECASE_HIFI_INCALL_DELIVERY2;
+#endif
     }
     return activeUsecase;
 }
