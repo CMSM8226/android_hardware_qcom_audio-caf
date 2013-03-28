@@ -2661,9 +2661,10 @@ void AudioHardwareALSA::disableVoiceCall(int mode, int device, uint32_t vsid)
 #endif
 }
 
-void AudioHardwareALSA::enableVoiceCall(int mode, int device, uint32_t vsid)
+status_t AudioHardwareALSA::enableVoiceCall(int mode, int device, uint32_t vsid)
 {
     // Start voice call
+    status_t status;
     unsigned long bufferSize = DEFAULT_VOICE_BUFFER_SIZE;
     alsa_handle_t alsa_handle;
     char *use_case;
@@ -2681,8 +2682,14 @@ void AudioHardwareALSA::enableVoiceCall(int mode, int device, uint32_t vsid)
         ALOGE("%s(): Error, verb=%p or modifier=%p is NULL",
               __func__, verb, modifier);
 
-            return;
+            return NO_INIT;
     }
+
+    if (device == AudioSystem::DEVICE_OUT_BLUETOOTH_A2DP) {
+        ALOGE("%s(): Error, BTA2DP is not supported in voice call",
+              __func__);
+        return NO_INIT;
+     }
 
     snd_use_case_get(mUcMgr, "_verb", (const char **)&use_case);
     if ((use_case == NULL) || (!strcmp(use_case, SND_USE_CASE_VERB_INACTIVE))) {
@@ -2717,7 +2724,17 @@ void AudioHardwareALSA::enableVoiceCall(int mode, int device, uint32_t vsid)
     } else {
         snd_use_case_set(mUcMgr, "_enamod", modifier);
     }
-    mALSADevice->startVoiceCall(&(*it), vsid);
+
+    status = mALSADevice->startVoiceCall(&(*it), vsid);
+
+    if (status == NO_ERROR) {
+        ALOGV("AudioHardwareAlsa: voice call succesfully started");
+    }
+    else {
+        ALOGE("AudioHardwareAlsa: voice call setup was unsuccesfull");
+        mDeviceList.erase(it);
+        return NO_INIT;
+    }
 
 #ifdef QCOM_USBAUDIO_ENABLED
     if((device & AudioSystem::DEVICE_OUT_ANLG_DOCK_HEADSET)||
@@ -2728,6 +2745,8 @@ void AudioHardwareALSA::enableVoiceCall(int mode, int device, uint32_t vsid)
        musbRecordingState |= USBRECBIT_VOICECALL;
     }
 #endif
+
+    return NO_ERROR;
 }
 
 char *AudioHardwareALSA::getUcmVerbForVSID(uint32_t vsid)
@@ -2851,6 +2870,7 @@ bool AudioHardwareALSA::routeCall(int device, int newMode, uint32_t vsid)
     int *curCallState = getCallStateForVSID(vsid);
     int newCallState = mCallState;
     enum voice_lch_mode lch_mode;
+    status_t status;
 
     if (curCallState == NULL) {
         ALOGE("%s(): Error, mCurCallState=%p is NULL",
@@ -2880,9 +2900,16 @@ bool AudioHardwareALSA::routeCall(int device, int newMode, uint32_t vsid)
         if (*curCallState == CALL_INACTIVE) {
             ALOGD("%s(): Start call for vsid:%x ",__func__, vsid);
 
-            enableVoiceCall(newMode, device, vsid);
-            isRouted = true;
-            *curCallState = CALL_ACTIVE;
+            status = enableVoiceCall(newMode, device, vsid);
+            if (status == NO_INIT) {
+                ALOGV("doRouting: voice call setup was unsuccesfull");
+                isRouted = false;
+                *curCallState = CALL_INACTIVE;
+            } else {
+                ALOGV("doRouting: voice call setup was succesfull");
+                isRouted = true;
+                *curCallState = CALL_ACTIVE;
+            }
 
         } else if (*curCallState == CALL_HOLD) {
             ALOGD("%s(): Resume call from hold state for vsid:%x",
