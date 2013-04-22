@@ -2457,6 +2457,33 @@ void ALSADevice::setVoipConfig(int mode, int rate)
     return;
 }
 
+status_t ALSADevice::setVocSessionId(uint32_t sessionId)
+{
+    status_t err = NO_ERROR;
+    char** setValues;
+
+    setValues = (char**)malloc(sizeof(char*));
+    if (setValues == NULL) {
+        return BAD_VALUE;
+    }
+    setValues[0] = (char*)malloc(12*sizeof(char));
+    if (setValues[0] == NULL) {
+        free(setValues);
+        return BAD_VALUE;
+    }
+    ALOGD("setVocSessionId: sessionId %d", sessionId);
+    sprintf(setValues[0], "%d", sessionId);
+
+    err = setMixerControlExt("Voc VSID", 1, setValues);
+    if (err != NO_ERROR)
+        ALOGE("set Session ID failed");
+
+    free(setValues[0]);
+    free(setValues);
+
+    return (err < 0) ? BAD_VALUE : NO_ERROR;
+}
+
 void ALSADevice::setBtscoRate(int rate)
 {
     mBtscoSamplerate = rate;
