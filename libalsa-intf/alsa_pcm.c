@@ -1015,7 +1015,7 @@ int pcm_set_channel_map(struct pcm *pcm, struct mixer *mixer,
 {
     struct mixer_ctl *ctl;
     char control_name[44]; // max length of name is 44 as defined
-    char device_num[3]; // device number upto 2 digit
+    char device_num[13]; // device number upto 2 digit
     char **set_values;
     int i;
 

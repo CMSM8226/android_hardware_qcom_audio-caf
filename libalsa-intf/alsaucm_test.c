@@ -302,7 +302,8 @@ static int process_cmd(char *cmdStr)
             fprintf(stderr, "%s: error failed to get %s: %d\n", cmd->cmd_str, identifier, err);
             return err;
         }
-        printf("  %s=%s\n", identifier, str);
+        if (str != NULL)
+            printf("  %s=%s\n", identifier, str);
         free((void *)str);
         break;
 
