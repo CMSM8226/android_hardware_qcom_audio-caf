@@ -63,6 +63,7 @@ extern "C"
     }
 #ifdef QCOM_ACDB_ENABLED
     static int (*acdb_init)();
+    static int (*acdb_reload_vocvol)(int, int, int);
     static void (*acdb_deallocate)();
 #endif
 #ifdef QCOM_CSDCLIENT_ENABLED
@@ -106,6 +107,7 @@ AudioHardwareALSA::AudioHardwareALSA() :
     mVolteCallState = CALL_INACTIVE;
     mVoice2CallState = CALL_INACTIVE;
     mVSID = 0;
+    mVoiceVolFeatureSet = 0;
     mIsFmActive = 0;
     mDevSettingsFlag = 0;
     bool audioInitDone = false;
@@ -168,7 +170,14 @@ AudioHardwareALSA::AudioHardwareALSA() :
             ALOGE("dlsym:Error:%s Loading acdb_loader_init_ACDB");
         }else {
            acdb_init();
+
+           acdb_reload_vocvol = (int (*)(int, int, int))::dlsym(mAcdbHandle,"acdb_loader_reload_vocvoltable");
+	   if (acdb_reload_vocvol == NULL)
+	       ALOGE("dlsym:Error:%s Loading acdb_reload_vocvol");
+
            acdb_deallocate = (void (*)())::dlsym(mAcdbHandle,"acdb_loader_deallocate_ACDB");
+	   if (acdb_deallocate == NULL)
+	       ALOGE("dlsym:Error:%s Loading acdb_deallocate");
         }
     }
     mALSADevice->setACDBHandle(mAcdbHandle);
@@ -796,6 +805,21 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
         }
     }
 
+#ifdef QCOM_ACDB_ENABLED
+    key = String8(VOLUME_BOOST_KEY);
+    if (param.get(key, value) == NO_ERROR) {
+        if (value == "on") {
+            if (!acdb_reload_vocvol(mALSADevice->getRxACDBID(), mALSADevice->getTxACDBID(), 1)) {
+                mVoiceVolFeatureSet = 1;
+            }
+        } else {
+            if (!acdb_reload_vocvol(mALSADevice->getRxACDBID(), mALSADevice->getTxACDBID(), 0)) {
+                mVoiceVolFeatureSet = 0;
+            }
+        }
+    }
+#endif
+
     key = String8(WIDEVOICE_KEY);
     if (param.get(key, value) == NO_ERROR) {
         bool flag = false;
@@ -1017,6 +1041,16 @@ String8 AudioHardwareALSA::getParameters(const String8& keys)
         if(mBluetoothVGS)
            param.addInt(String8("isVGS"), true);
     }
+
+#ifdef QCOM_ACDB_ENABLED
+    key = String8(VOLUME_BOOST_KEY);
+    if (param.get(key, value) == NO_ERROR) {
+        if (mVoiceVolFeatureSet)
+            param.add(key, String8("on"));
+        else
+            param.add(key, String8("off"));
+    }
+#endif
 #ifdef QCOM_SSR_ENABLED
     key = String8(AUDIO_PARAMETER_KEY_SSR);
     if (param.get(key, value) == NO_ERROR) {
