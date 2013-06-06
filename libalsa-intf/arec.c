@@ -118,9 +118,19 @@ static int set_params(struct pcm *pcm)
          param_set_min(params, SNDRV_PCM_HW_PARAM_PERIOD_BYTES, period);
      else
          param_set_min(params, SNDRV_PCM_HW_PARAM_PERIOD_TIME, 10);
-     param_set_int(params, SNDRV_PCM_HW_PARAM_SAMPLE_BITS, 16);
-     param_set_int(params, SNDRV_PCM_HW_PARAM_FRAME_BITS,
-                    pcm->channels * 16);
+
+     switch (format) {
+     case SNDRV_PCM_FORMAT_S16_LE:
+         param_set_int(params, SNDRV_PCM_HW_PARAM_SAMPLE_BITS, 16);
+         param_set_int(params, SNDRV_PCM_HW_PARAM_FRAME_BITS,
+                        pcm->channels * 16);
+         break;
+     case SNDRV_PCM_FORMAT_S24_LE:
+         param_set_int(params, SNDRV_PCM_HW_PARAM_SAMPLE_BITS, 32);
+         param_set_int(params, SNDRV_PCM_HW_PARAM_FRAME_BITS,
+                        pcm->channels * 32);
+         break;
+     }
      param_set_int(params, SNDRV_PCM_HW_PARAM_CHANNELS,
                     pcm->channels);
      param_set_int(params, SNDRV_PCM_HW_PARAM_RATE, pcm->rate);
@@ -183,9 +193,32 @@ static int set_params(struct pcm *pcm)
 
 }
 
+int buffer_data(struct pcm *pcm, void *data, void *reduce_data, unsigned count)
+{
+    int data_size;
+    int remove_bytes;
+    int i;
+    char *reduce_data_ptr;
+    char *data_buf_ptr = (char *)data;
+
+    if (pcm->format != SNDRV_PCM_FORMAT_S24_LE)
+       return 0;
+
+    remove_bytes = (count/4);
+    reduce_data_ptr = (char *)reduce_data;
+    for (i = 0; i < remove_bytes; i++) {
+        data_buf_ptr++;
+        *reduce_data_ptr++ = *data_buf_ptr++;
+        *reduce_data_ptr++ = *data_buf_ptr++;
+        *reduce_data_ptr++ = *data_buf_ptr++;
+    }
+    memcpy(data, reduce_data, (count/4)*3);
+    return 0;
+}
+
 int record_file(unsigned rate, unsigned channels, int fd, unsigned count,  unsigned flags, const char *device)
 {
-    unsigned xfer, bufsize, framesize;
+    unsigned xfer, bufsize, framesize, bytes_to_write;
     int r, avail;
     int nfds = 1;
     static int start = 0;
@@ -197,6 +230,7 @@ int record_file(unsigned rate, unsigned channels, int fd, unsigned count,  unsig
     int rec_size = 0;
     framesize = 0;
     flags |= PCM_IN;
+    char *reduce_data = NULL;
 
     if (channels == 1)
         flags |= PCM_MONO;
@@ -410,6 +444,10 @@ int record_file(unsigned rate, unsigned channels, int fd, unsigned count,  unsig
                 pcm_close(pcm);
                 return -errno;
             }
+            if (format == SNDRV_PCM_FORMAT_S24_LE)
+                bytes_to_write = (bufsize / 4) * 3;
+            else
+                bytes_to_write = bufsize;
 
 	    data = calloc(1, bufsize);
 	    if (!data) {
@@ -417,13 +455,20 @@ int record_file(unsigned rate, unsigned channels, int fd, unsigned count,  unsig
 		return -ENOMEM;
 	    }
 
+            reduce_data = (char *)calloc(1, bytes_to_write);
+            if (!reduce_data) {
+                fprintf(stderr, "Arec:could not allocate buffer for reduce data\n");
+                return -ENOMEM;
+            }
+
 	    while (!pcm_read(pcm, data, bufsize)) {
-		if (write(fd, data, bufsize) != bufsize) {
-		    fprintf(stderr, "Arec:could not write %d bytes\n", bufsize);
+                buffer_data(pcm, data, reduce_data, bufsize);
+		if (write(fd, data, bytes_to_write) != bytes_to_write) {
+		    fprintf(stderr, "Arec:could not write %d bytes\n", bytes_to_write);
 		    break;
 		}
-                rec_size += bufsize;
-                hdr.data_sz += bufsize;
+                rec_size += bytes_to_write;
+                hdr.data_sz += bytes_to_write;
                 hdr.riff_sz = hdr.data_sz + 44 - 8;
                 if (!piped) {
                     lseek(fd, 0, SEEK_SET);
@@ -437,6 +482,8 @@ int record_file(unsigned rate, unsigned channels, int fd, unsigned count,  unsig
     fprintf(stderr, " rec_size =%d count =%d\n", rec_size, count);
     close(fd);
     free(data);
+    if (reduce_data != NULL)
+        free(reduce_data);
     pcm_close(pcm);
     return hdr.data_sz;
 
@@ -515,7 +562,11 @@ int rec_wav(const char *fg, const char *device, int rate, int ch, const char *fn
         hdr.audio_format = FORMAT_PCM;
         hdr.num_channels = ch;
         hdr.sample_rate = rate;
-        hdr.bits_per_sample = 16;
+        if (format == SNDRV_PCM_FORMAT_S16_LE) {
+            hdr.bits_per_sample = 16;
+        } else if (format == SNDRV_PCM_FORMAT_S24_LE) {
+            hdr.bits_per_sample = 24;
+        }
         hdr.byte_rate = (rate * ch * hdr.bits_per_sample) / 8;
         hdr.block_align = ( hdr.bits_per_sample * ch ) / 8;
         hdr.data_id = ID_DATA;
@@ -680,7 +731,8 @@ int main(int argc, char **argv)
     sigaction(SIGABRT, &sa, NULL);
 
     if (pcm_flag) {
-	 if (format == SNDRV_PCM_FORMAT_S16_LE)
+	 if (format == SNDRV_PCM_FORMAT_S16_LE ||
+	     format == SNDRV_PCM_FORMAT_S24_LE)
              rc = rec_wav(mmap, device, rate, ch, filename);
          else
              rc = rec_raw(mmap, device, rate, ch, filename);

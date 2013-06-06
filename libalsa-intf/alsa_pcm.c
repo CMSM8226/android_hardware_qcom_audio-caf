@@ -750,6 +750,7 @@ int pcm_write(struct pcm *pcm, void *data, unsigned count)
 int pcm_read(struct pcm *pcm, void *data, unsigned count)
 {
     struct snd_xferi x;
+    int format = pcm->format;
 
     if (!(pcm->flags & PCM_IN))
         return -EINVAL;
@@ -766,6 +767,9 @@ int pcm_read(struct pcm *pcm, void *data, unsigned count)
     } else {
         x.frames = (count / 4);
     }
+
+    if (format == SNDRV_PCM_FORMAT_S24_LE)
+        x.frames = x.frames/2;
 
     for (;;) {
         if (!pcm->running) {
