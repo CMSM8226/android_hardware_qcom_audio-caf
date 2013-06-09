@@ -194,6 +194,7 @@ static const char *card_list[] = {
     "snd_soc_apq_Taiko_DB",
     "snd_soc_msm_I2SFusion",
     "snd_soc_msm_Tapan",
+    "snd_soc_msm_Tapan_SKUF",
     "snd_soc_msm_8x10_wcd",
     "us_soc_msm",
 };
@@ -218,6 +219,7 @@ static card_mapping_t card_mapping_list[] = {
     {"snd_soc_apq_Taiko_DB", 0},
     {"snd_soc_msm_I2SFusion", 0},
     {"snd_soc_msm_Tapan", 0},
+    {"snd_soc_msm_Tapan_SKUF", 0},
     {"snd_soc_msm_8x10_wcd", 0},
     {"us_soc_msm", 0},
 };
