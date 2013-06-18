@@ -196,6 +196,7 @@ static const char *card_list[] = {
     "snd_soc_msm_Tapan",
     "snd_soc_msm_8x10_wcd",
     "snd_soc_msm_8x10_wcd_skuab",
+    "snd_soc_msm_8x10_wcd_skuaa",
     "us_soc_msm",
 };
 
@@ -221,6 +222,7 @@ static card_mapping_t card_mapping_list[] = {
     {"snd_soc_msm_Tapan", 0},
     {"snd_soc_msm_8x10_wcd", 0},
     {"snd_soc_msm_8x10_wcd_skuab", 0},
+    {"snd_soc_msm_8x10_wcd_skuaa", 0},
     {"us_soc_msm", 0},
 };
 

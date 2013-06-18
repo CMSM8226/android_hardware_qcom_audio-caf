@@ -194,6 +194,8 @@ AudioHardwareALSA::AudioHardwareALSA() :
         snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_8x10_wcd", cardInfo->card);
     } else if (!strcmp((const char*)cardInfo->name, "msm8x10-skuab-snd-card")) {
         snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_8x10_wcd_skuab", cardInfo->card);
+    } else if (!strcmp((const char*)cardInfo->name, "msm8x10-skuaa-snd-card")) {
+        snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_8x10_wcd_skuaa", cardInfo->card);
     } else if (!strcmp((const char*)cardInfo->name, "msm8930-sitar-snd-card")) {
         snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_Sitar", cardInfo->card);
     } else if (!strcmp((const char*)cardInfo->name, "msm8960-tabla1x-snd-card")) {
