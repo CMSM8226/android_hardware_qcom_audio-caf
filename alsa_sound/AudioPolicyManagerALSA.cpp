@@ -1125,6 +1125,11 @@ audio_io_handle_t AudioPolicyManager::getInput(int inputSource,
     case AUDIO_SOURCE_VOICE_CALL:
         channelMask |= (AudioSystem::CHANNEL_IN_VOICE_UPLINK | AudioSystem::CHANNEL_IN_VOICE_DNLINK);
         break;
+#ifdef RESOURCE_MANAGER
+    case AUDIO_SOURCE_CAMCORDER:
+           checkAndSuspendOutputs();
+       break;
+#endif
     default:
         break;
     }
@@ -1239,6 +1244,11 @@ status_t AudioPolicyManager::stopInput(audio_io_handle_t input)
         AudioParameter param = AudioParameter();
         param.addInt(String8(AudioParameter::keyRouting), 0);
         mpClientInterface->setParameters(input, param.toString());
+#ifdef RESOURCE_MANAGER
+        if(inputDesc->mInputSource == AUDIO_SOURCE_CAMCORDER ) {
+            checkAndRestoreOutputs();
+        }
+#endif
         setOutputDevice(mPrimaryOutput, getNewDevice(mPrimaryOutput, true), true);
         inputDesc->mRefCount = 0;
         return NO_ERROR;
@@ -2390,7 +2400,45 @@ bool AudioPolicyManager::platform_is_Fusion3()
     else
         return false;
 }
+#ifdef RESOURCE_MANAGER
+void AudioPolicyManager::checkAndSuspendOutputs() {
 
+    AudioOutputDescriptor *desc;
+    for (size_t i = 0; i < mOutputs.size(); i++) {
+        desc = mOutputs.valueAt(i);
+        if(isInCall() || desc->mFlags & ((audio_output_flags_t) AUDIO_OUTPUT_FLAG_FAST)) {
+            // TODO: Do we need to ignore voip also. voip call would be stopped otherwise?
+            /*if(desc->mFlags &
+            ((audio_output_flags_t)AUDIO_OUTPUT_FLAG_FAST) ||
+                    desc->mFlags &
+                    ((audio_output_flags_t)AUDIO_OUTPUT_FLAG_VOIP_RX)) {*/
+            ALOGD("Ignore Fast  : on suspend");
+            continue;
+        }
+        ALOGD("suspend Ouput");
+        mpClientInterface->suspendOutput(mOutputs.keyAt(i));
+    }
+}
+
+void AudioPolicyManager::checkAndRestoreOutputs() {
+
+    AudioOutputDescriptor *desc;
+    for (size_t i = 0; i < mOutputs.size(); i++) {
+        desc = mOutputs.valueAt(i);
+        if(isInCall() || desc->mFlags & ((audio_output_flags_t) AUDIO_OUTPUT_FLAG_FAST)) {
+            // TODO: Do we need to ignore voip also. voip call would be stopped otherwise?
+            /*if(desc->mFlags &
+                    ((audio_output_flags_t)AUDIO_OUTPUT_FLAG_FAST) ||
+                    desc->mFlags &
+                    ((audio_output_flags_t)AUDIO_OUTPUT_FLAG_VOIP_RX)) { */
+            ALOGD("Ignore Fast : on suspend");
+            continue;
+        }
+        ALOGD("restore Output");
+        mpClientInterface->restoreOutput(mOutputs.keyAt(i));
+    }
+}
+#endif
 extern "C" AudioPolicyInterface* createAudioPolicyManager(AudioPolicyClientInterface *clientInterface)
 {
     return new AudioPolicyManager(clientInterface);

@@ -120,11 +120,18 @@ LOCAL_SRC_FILES := \
   AudioUsbALSA.cpp              \
   AudioUtil.cpp                 \
   ALSADevice.cpp                \
-  AudioSpeakerProtection.cpp
+  AudioSpeakerProtection.cpp    \
 
 ifneq ($(strip $(QCOM_AUDIO_FEATURE_DISABLED_TUNNEL_LPA)),true)
     LOCAL_SRC_FILES +=AudioSessionOut.cpp
 endif
+
+# RESOURCE MANAGER
+ifeq ($(strip $(BOARD_USES_RESOURCE_MANAGER)),true)
+LOCAL_CFLAGS += -DRESOURCE_MANAGER
+LOCAL_SRC_FILES += AudioResourceManager.cpp
+endif
+# RESOURCE MANAGER
 
 LOCAL_STATIC_LIBRARIES := \
     libmedia_helper \
@@ -242,6 +249,14 @@ LOCAL_SRC_FILES := \
 ifdef DOLBY_UDC_MULTICHANNEL
   LOCAL_CFLAGS += -DDOLBY_UDC_MULTICHANNEL
 endif #DOLBY_UDC_MULTICHANNEL
+
+# RESOURCE MANAGER
+ifeq ($(strip $(BOARD_USES_RESOURCE_MANAGER)),true)
+LOCAL_CFLAGS += -DRESOURCE_MANAGER
+endif
+# RESOURCE MANAGER
+
+
 
 ifeq ($(call is-board-platform,msm8974),true)
   LOCAL_MODULE := audio_policy.msm8974

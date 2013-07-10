@@ -241,7 +241,26 @@ status_t ALSAStreamOps::setParameters(const String8& keyValuePairs)
             ALOGD("setParameters(): handleFm with device %d", device);
             if(device) {
                 mDevices = device;
+#ifdef RESOURCE_MANAGER
+                uint32_t state = 0;
+                mParent->handleFmConcurrency(device, state);
+                if(state ==  AudioHardwareALSA::CONCURRENCY_ACTIVE) {
+                    err =  mParent->setParameterForConcurrency(
+                            String8("USECASE_FM_PLAYBACK"), state);
+                    if(err != OK) {
+                        ALOGE("Handle FM error");
+                        param.remove(key);
+                        return err;
+                    }
+                }
+#endif
                 mParent->handleFm(device);
+#ifdef RESOURCE_MANAGER
+                if(state ==  AudioHardwareALSA::CONCURRENCY_INACTIVE) {
+                    err =  mParent->setParameterForConcurrency(
+                            String8("USECASE_FM_PLAYBACK"), state);
+                }
+#endif
             }
             param.remove(key);
         } else {
