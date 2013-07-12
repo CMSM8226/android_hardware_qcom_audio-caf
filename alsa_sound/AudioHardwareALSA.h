@@ -1211,6 +1211,8 @@ protected:
       USECASE_HIFI_TUNNEL2 = 0x20,
       USECASE_HIFI_TUNNEL3 = 0x40,
       USECASE_HIFI_TUNNEL4 = 0x80,
+      USECASE_HIFI_INCALL_DELIVERY = 0x100,
+      USECASE_HIFI_INCALL_DELIVERY2 = 0x200,
     };
     uint32_t mExtOutActiveUseCases;
     status_t mStatus;

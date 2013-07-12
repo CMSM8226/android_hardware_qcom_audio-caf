@@ -983,8 +983,16 @@ status_t ALSADevice::open(alsa_handle_t *handle)
         flags |= DEBUG_ON;
     } else if ((!strcmp(handle->useCase, SND_USE_CASE_VERB_HIFI)) ||
         (!strcmp(handle->useCase, SND_USE_CASE_VERB_HIFI2)) ||
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+        (!strcmp(handle->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY)) ||
+        (!strcmp(handle->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2)) ||
+#endif
         (!strcmp(handle->useCase, SND_USE_CASE_VERB_HIFI_LOWLATENCY_MUSIC)) ||
         (!strcmp(handle->useCase, SND_USE_CASE_MOD_PLAY_LOWLATENCY_MUSIC)) ||
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+        (!strcmp(handle->useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY)) ||
+        (!strcmp(handle->useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2)) ||
+#endif
         (!strcmp(handle->useCase, SND_USE_CASE_MOD_PLAY_MUSIC2)) ||
         (!strcmp(handle->useCase, SND_USE_CASE_MOD_PLAY_MUSIC))) {
         ALOGD("Music case");
@@ -1631,6 +1639,12 @@ int ALSADevice::getUseCaseType(const char *useCase)
 {
     ALOGD("use case is %s\n", useCase);
     if (isTunnelUseCase(useCase) ||
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+        !strncmp(useCase, SND_USE_CASE_VERB_INCALL_DELIVERY,
+            MAX_LEN(useCase,SND_USE_CASE_VERB_INCALL_DELIVERY)) ||
+        !strncmp(useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2,
+            MAX_LEN(useCase,SND_USE_CASE_VERB_INCALL_DELIVERY2)) ||
+#endif
         !strncmp(useCase, SND_USE_CASE_VERB_HIFI,
             MAX_LEN(useCase,SND_USE_CASE_VERB_HIFI)) ||
         !strncmp(useCase, SND_USE_CASE_VERB_HIFI2,
@@ -1643,6 +1657,12 @@ int ALSADevice::getUseCaseType(const char *useCase)
             MAX_LEN(useCase,SND_USE_CASE_VERB_HIFI2)) ||
         !strncmp(useCase, SND_USE_CASE_VERB_DIGITAL_RADIO,
             MAX_LEN(useCase,SND_USE_CASE_VERB_DIGITAL_RADIO)) ||
+#ifdef QCOM_INCALL_MUSIC_ENABLED
+        !strncmp(useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY,
+            MAX_LEN(useCase,SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY)) ||
+        !strncmp(useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2,
+            MAX_LEN(useCase,SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2)) ||
+#endif
         !strncmp(useCase, SND_USE_CASE_MOD_PLAY_MUSIC,
             MAX_LEN(useCase,SND_USE_CASE_MOD_PLAY_MUSIC)) ||
         !strncmp(useCase, SND_USE_CASE_MOD_PLAY_MUSIC2,
