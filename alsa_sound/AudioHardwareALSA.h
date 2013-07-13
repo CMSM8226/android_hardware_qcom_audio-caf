@@ -125,6 +125,7 @@ class AudioHardwareALSA;
 #define INCALLMUSIC_KEY     "incall_music_enabled"
 #define VSID_KEY            "vsid"
 #define CALL_STATE_KEY      "call_state"
+#define VOLUME_BOOST_KEY    "volume_boost"
 #define AUDIO_PARAMETER_KEY_FM_VOLUME "fm_volume"
 
 
@@ -492,6 +493,8 @@ public:
 #endif
 #ifdef QCOM_ACDB_ENABLED
     void     setACDBHandle(void*);
+    int getTxACDBID();
+    int getRxACDBID();
 #endif
     void     setSpkrProtHandle(AudioSpeakerProtection*);
 
@@ -538,6 +541,8 @@ private:
     char mMicType[25];
     char mCurRxUCMDevice[50];
     char mCurTxUCMDevice[50];
+    int mTxACDBID;
+    int mRxACDBID;
     //fluence mode value: FLUENCE_MODE_BROADSIDE or FLUENCE_MODE_ENDFIRE
     uint32_t mFluenceMode;
     int mFmVolume;
@@ -1172,6 +1177,7 @@ protected:
     int mVoice2CallState;
     int mCallState;
     uint32_t mVSID;
+    int mVoiceVolFeatureSet;
     int mIsFmActive;
     bool mBluetoothVGS;
     bool mFusion3Platform;

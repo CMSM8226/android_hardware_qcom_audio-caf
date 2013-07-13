@@ -88,6 +88,8 @@ ALSADevice::ALSADevice() {
     mBtscoSamplerate = 8000;
     mCallMode = AUDIO_MODE_NORMAL;
     mInChannels = 0;
+    mTxACDBID = 0;
+    mRxACDBID = 0;
     mIsFmEnabled = false;
     //Initialize fm volume to value corresponding to unity volume
     mFmVolume = lrint((0.0 * 0x2000) + 0.5);
@@ -635,7 +637,6 @@ void ALSADevice::switchDevice(alsa_handle_t *handle, uint32_t devices, uint32_t 
     bool inCallDevSwitch = false;
     char *rxDevice, *txDevice, ident[70], *use_case = NULL;
     int err = 0, index, mods_size;
-    int rx_dev_id, tx_dev_id;
     ALOGD("%s: device %#x mode:%d", __FUNCTION__, devices, mode);
 
     if ((mode == AUDIO_MODE_IN_CALL)  || (mode == AUDIO_MODE_IN_COMMUNICATION)) {
@@ -845,18 +846,32 @@ void ALSADevice::switchDevice(alsa_handle_t *handle, uint32_t devices, uint32_t 
 #endif
     ALOGD("switchDevice: mCurTxUCMDevivce %s mCurRxDevDevice %s", mCurTxUCMDevice, mCurRxUCMDevice);
 #ifdef QCOM_ACDB_ENABLED
+    /* Use speaker phone mic if in voice call using speakerphone */
+    if (((mRxACDBID == DEVICE_SPEAKER_RX_ACDB_ID) && (mTxACDBID == DEVICE_HANDSET_TX_ACDB_ID)) &&
+       ((mCallMode == AUDIO_MODE_IN_CALL) || (mCallMode == AUDIO_MODE_IN_COMMUNICATION))) {
+
+        mTxACDBID = DEVICE_SPEAKER_TX_ACDB_ID;
+    } else {
+        memset(&ident,0,sizeof(ident));
+        strlcpy(ident, "ACDBID/", sizeof(ident));
+        strlcat(ident, mCurTxUCMDevice, sizeof(ident));
+        mTxACDBID = snd_use_case_get(handle->ucMgr, ident, NULL);
+    }
+
+    memset(&ident,0,sizeof(ident));
+    strlcpy(ident, "ACDBID/", sizeof(ident));
+    strlcat(ident, mCurRxUCMDevice, sizeof(ident));
+    mRxACDBID = snd_use_case_get(handle->ucMgr, ident, NULL);
+    ALOGD("rx_dev_id=%d, tx_dev_id=%d\n", mRxACDBID, mTxACDBID);
+
     if (((devices & AudioSystem::DEVICE_IN_BUILTIN_MIC) || (devices & AudioSystem::DEVICE_IN_BACK_MIC))
         && (mInChannels == 1)) {
         ALOGD("switchDevice:use device %x for channels:%d usecase:%s",devices,handle->channels,handle->useCase);
         int ec_acdbid;
         char *ec_dev;
         char *ec_rx_dev;
-        memset(&ident,0,sizeof(ident));
-        strlcpy(ident, "ACDBID/", sizeof(ident));
-        strlcat(ident, mCurTxUCMDevice, sizeof(ident));
-        tx_dev_id = snd_use_case_get(handle->ucMgr, ident, NULL);
         if (acdb_loader_get_ecrx_device) {
-            ec_acdbid = acdb_loader_get_ecrx_device(tx_dev_id);
+            ec_acdbid = acdb_loader_get_ecrx_device(mTxACDBID);
             ec_dev = getUCMDeviceFromAcdbId(ec_acdbid);
             if (ec_dev) {
                 memset(&ident,0,sizeof(ident));
@@ -874,33 +889,15 @@ void ALSADevice::switchDevice(alsa_handle_t *handle, uint32_t devices, uint32_t 
         }
     }
 #endif
-    if (isPlatformFusion3() && (inCallDevSwitch == true)) {
-
-        /* get tx acdb id */
-        memset(&ident,0,sizeof(ident));
-        strlcpy(ident, "ACDBID/", sizeof(ident));
-        strlcat(ident, mCurTxUCMDevice, sizeof(ident));
-        tx_dev_id = snd_use_case_get(handle->ucMgr, ident, NULL);
-
-       /* get rx acdb id */
-        memset(&ident,0,sizeof(ident));
-        strlcpy(ident, "ACDBID/", sizeof(ident));
-        strlcat(ident, mCurRxUCMDevice, sizeof(ident));
-        rx_dev_id = snd_use_case_get(handle->ucMgr, ident, NULL);
-
-        if (rx_dev_id == DEVICE_SPEAKER_RX_ACDB_ID && tx_dev_id == DEVICE_HANDSET_TX_ACDB_ID) {
-            tx_dev_id = DEVICE_SPEAKER_TX_ACDB_ID;
-        }
-
-        ALOGV("rx_dev_id=%d, tx_dev_id=%d\n", rx_dev_id, tx_dev_id);
 #ifdef QCOM_CSDCLIENT_ENABLED
+    if (isPlatformFusion3() && (inCallDevSwitch == true)) {
         if (isPlatformFusion3()) {
             if (csd_enable_device == NULL) {
                 ALOGE("csd_client_enable_device is NULL");
             } else {
                 int adjustedFlags = adjustFlagsForCsd(mDevSettingsFlag,
                         mCurRxUCMDevice);
-                err = csd_enable_device(rx_dev_id, tx_dev_id, adjustedFlags);
+                err = csd_enable_device(mRxACDBID, mTxACDBID, adjustedFlags);
                 if (err < 0)
                 {
                     ALOGE("csd_client_disable_device failed, error %d", err);
@@ -3249,6 +3246,16 @@ void  ALSADevice::setACDBHandle(void* handle)
 
     acdb_loader_get_ecrx_device = (int (*)(int))::dlsym(macdb_handle,
                                                 "acdb_loader_get_ecrx_device");
+}
+
+int  ALSADevice::getTxACDBID()
+{
+    return mTxACDBID;
+}
+
+int  ALSADevice::getRxACDBID()
+{
+    return mRxACDBID;
 }
 #endif
 
