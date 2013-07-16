@@ -61,6 +61,11 @@ static int (*acdb_loader_get_ecrx_device)(int acdb_id);
 #define ADSP_UP_CHK_TRIES 5
 #define ADSP_UP_CHK_SLEEP 1*1000*1000
 
+#define MAX_VOL_INDEX 5
+#define MIN_VOL_INDEX 0
+#define percent_to_index(val, min, max) \
+        ((val) * ((max) - (min)) * 0.01 + (min) + .5)
+
 namespace sys_close {
     ssize_t lib_close(int fd) {
         return close(fd);
@@ -2222,10 +2227,44 @@ char* ALSADevice::getUCMDevice(uint32_t devices, int input, char *rxDevice)
 
 void ALSADevice::setVoiceVolume(int vol)
 {
-    int err = 0;
-
+    int err = NO_ERROR;
+    int vol_index = 0;
+    char** setValues;
+    #define NUM_PARAMS 3
     ALOGD("setVoiceVolume: volume %d", vol);
-    setMixerControl("Voice Rx Volume", vol, 0);
+
+    setValues = (char**)malloc((NUM_PARAMS)*sizeof(char*));
+    if (!setValues) {
+        ALOGE("setVoiceVolume: allocation error %d", err);
+        return;
+    }
+
+    for (int i = 0; i < NUM_PARAMS; i++) {
+        setValues[i] = (char*)malloc(4*sizeof(char));
+        if (!setValues[i]) {
+            err = BAD_VALUE;
+            ALOGE("setVoiceVolume: allocation error %d", err);
+            break;
+        }
+    }
+
+    if (err == NO_ERROR) {
+        vol_index = (int)percent_to_index(vol, MIN_VOL_INDEX,
+                                      MAX_VOL_INDEX);
+        snprintf(setValues[0], (4*sizeof(char)), "%d", vol_index);
+        snprintf(setValues[1], (4*sizeof(char)), "%d", ALL_SESSION_VSID);
+        snprintf(setValues[2], (4*sizeof(char)), "%d", DEFAULT_VOLUME_RAMP_DURATION_MS);
+
+        err = setMixerControlExt("Voice Rx Gain", NUM_PARAMS, setValues);
+        ALOGV("setMixerControlExt ret=%d vol_idx=%d session_id=%#x ramp_dur=%d\n",
+              err, vol_index, ALL_SESSION_VSID, DEFAULT_VOLUME_RAMP_DURATION_MS);
+    }
+
+    for(int i = 0; i < NUM_PARAMS; i++)
+        if (setValues[i])
+            free(setValues[i]);
+    if (setValues)
+        free(setValues);
 
 #ifdef QCOM_CSDCLIENT_ENABLED
     if (isPlatformFusion3()) {
@@ -2241,60 +2280,83 @@ void ALSADevice::setVoiceVolume(int vol)
 #endif
 }
 
-void ALSADevice::setVoice2Volume(int vol)
-{
-    int err = 0;
 
-    ALOGD("setVoice2Volume: volume %d", vol);
-    setMixerControl("Voice2 Rx Volume", vol, 0);
-
-#ifdef QCOM_CSDCLIENT_ENABLED
-    if (isPlatformFusion3()) {
-        if (csd_volume == NULL) {
-            ALOGE("csd_client_volume is NULL");
-        } else {
-            err = csd_volume(ALL_SESSION_VSID, vol);
-            if (err < 0) {
-                ALOGE("s_set_voice_volume: csd_client error %d", err);
-            }
-        }
-    }
-#endif
-}
-
-void ALSADevice::setVoLTEVolume(int vol)
-{
-    int err = 0;
-
-    ALOGD("setVoLTEVolume: volume %d", vol);
-    setMixerControl("VoLTE Rx Volume", vol, 0);
-
-#ifdef QCOM_CSDCLIENT_ENABLED
-    if (isPlatformFusion3()) {
-        if (csd_volume == NULL) {
-            ALOGE("csd_client_volume is NULL");
-        } else {
-            err = csd_volume(ALL_SESSION_VSID, vol);
-            if (err < 0) {
-                ALOGE("s_set_voice_volume: csd_client error %d", err);
-            }
-        }
-    }
-#endif
-}
 
 void ALSADevice::setVoipVolume(int vol)
 {
+    int err = NO_ERROR;
+    int vol_index = 0;
+    char** setValues;
+    #define NUM_PARAMS 2
     ALOGD("setVoipVolume: volume %d", vol);
-    setMixerControl("Voip Rx Volume", vol, 0);
+
+    setValues = (char**)malloc((NUM_PARAMS)*sizeof(char*));
+    if (!setValues) {
+        ALOGE("setVoipVolume: allocation error %d", err);
+        return;
+    }
+
+    for (int i = 0; i < NUM_PARAMS; i++) {
+        setValues[i] = (char*)malloc(4*sizeof(char));
+        if (!setValues[i]) {
+            err = BAD_VALUE;
+            ALOGE("setVoipVolume: allocation error %d", err);
+            break;
+        }
+    }
+
+    if (err == NO_ERROR) {
+        vol_index = (int)percent_to_index(vol, MIN_VOL_INDEX,
+                                      MAX_VOL_INDEX);
+        snprintf(setValues[0], (4*sizeof(char)), "%d", vol_index);
+        snprintf(setValues[1], (4*sizeof(char)), "%d", DEFAULT_VOLUME_RAMP_DURATION_MS);
+
+        err = setMixerControlExt("Voip Rx Gain", NUM_PARAMS, setValues);
+        ALOGV("setMixerControlExt ret=%d vol_idx=%d ramp_dur=%d\n",
+              err, vol_index, DEFAULT_VOLUME_RAMP_DURATION_MS);
+    }
+
+    for(int i = 0; i < NUM_PARAMS; i++)
+        if (setValues[i])
+            free(setValues[i]);
+    if (setValues)
+        free(setValues);
 }
 
 void ALSADevice::setMicMute(int state)
 {
-    int err = 0;
-
+    int err = NO_ERROR;
+    char** setValues;
+    #define NUM_PARAMS 3
     ALOGD("setMicMute: state %d", state);
-    setMixerControl("Voice Tx Mute", state, 0);
+
+    setValues = (char**)malloc((NUM_PARAMS)*sizeof(char*));
+    if (!setValues) {
+        ALOGE("setMicMute: allocation error");
+        return;
+    }
+
+    for (int i = 0; i < NUM_PARAMS; i++) {
+        setValues[i] = (char*)malloc(4*sizeof(char));
+        if (!setValues[i]) {
+            err = BAD_VALUE;
+            ALOGE("setMicMute: allocation error %d", err);
+            break;
+        }
+    }
+
+    if (err == NO_ERROR) {
+        snprintf(setValues[0], (4*sizeof(char)), "%d", state);
+        snprintf(setValues[1], (4*sizeof(char)), "%d", ALL_SESSION_VSID);
+        snprintf(setValues[2], (4*sizeof(char)), "%d", DEFAULT_MUTE_RAMP_DURATION);
+        setMixerControlExt("Voice Tx Mute", NUM_PARAMS, setValues);
+    }
+
+    for(int i = 0; i < NUM_PARAMS; i++)
+        if (setValues[i])
+            free(setValues[i]);
+    if (setValues)
+        free(setValues);
 
 #ifdef QCOM_CSDCLIENT_ENABLED
     if (isPlatformFusion3()) {
@@ -2310,53 +2372,40 @@ void ALSADevice::setMicMute(int state)
 #endif
 }
 
-void ALSADevice::setVoice2MicMute(int state)
-{
-    int err = 0;
-
-    ALOGD("setVoice2MicMute: state %d", state);
-    setMixerControl("Voice2 Tx Mute", state, 0);
-
-#ifdef QCOM_CSDCLIENT_ENABLED
-    if (isPlatformFusion3()) {
-        if (csd_mic_mute == NULL) {
-            ALOGE("csd_mic_mute is NULL");
-        } else {
-            err = csd_mic_mute(ALL_SESSION_VSID, state);
-            if (err < 0) {
-                ALOGE("s_set_mic_mute: csd_client error %d", err);
-            }
-        }
-
-    }
-#endif
-}
-
-void ALSADevice::setVoLTEMicMute(int state)
-{
-    int err = 0;
-
-    ALOGD("setVolteMicMute: state %d", state);
-    setMixerControl("VoLTE Tx Mute", state, 0);
-
-#ifdef QCOM_CSDCLIENT_ENABLED
-    if (isPlatformFusion3()) {
-        if (csd_mic_mute == NULL) {
-            ALOGE("csd_mic_mute is NULL");
-        } else {
-            err = csd_mic_mute(ALL_SESSION_VSID, state);
-            if (err < 0) {
-                ALOGE("s_set_mic_mute: csd_client error %d", err);
-            }
-        }
-    }
-#endif
-}
 
 void ALSADevice::setVoipMicMute(int state)
 {
+    int err = NO_ERROR;
+    char** setValues;
+    #define NUM_PARAMS 2
     ALOGD("setVoipMicMute: state %d", state);
-    setMixerControl("Voip Tx Mute", state, 0);
+
+    setValues = (char**)malloc((NUM_PARAMS)*sizeof(char*));
+    if (!setValues) {
+        ALOGE("setVoipMicMute: allocation error");
+        return;
+    }
+
+    for (int i = 0; i < NUM_PARAMS; i++) {
+        setValues[i] = (char*)malloc(4*sizeof(char));
+        if (!setValues[i]) {
+            err = BAD_VALUE;
+            ALOGE("setVoipMicMute: allocation error %d", err);
+            break;
+        }
+    }
+
+    if (err == NO_ERROR) {
+        snprintf(setValues[0], (4*sizeof(char)), "%d", state);
+        snprintf(setValues[1], (4*sizeof(char)), "%d", DEFAULT_MUTE_RAMP_DURATION);
+        setMixerControlExt("Voip Tx Mute", NUM_PARAMS, setValues);
+    }
+
+    for(int i = 0; i < NUM_PARAMS; i++)
+        if (setValues[i])
+            free(setValues[i]);
+    if (setValues)
+        free(setValues);
 }
 
 void ALSADevice::setVoipConfig(int mode, int rate)

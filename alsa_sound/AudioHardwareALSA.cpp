@@ -511,12 +511,7 @@ status_t AudioHardwareALSA::setVoiceVolume(float v)
         if(newMode == AUDIO_MODE_IN_COMMUNICATION) {
             mALSADevice->setVoipVolume(vol);
         } else if (newMode == AUDIO_MODE_IN_CALL){
-               if (mVoiceCallState == CALL_ACTIVE)
-                   mALSADevice->setVoiceVolume(vol);
-               else if (mVoice2CallState == CALL_ACTIVE)
-                   mALSADevice->setVoice2Volume(vol);
-               if (mVolteCallState == CALL_ACTIVE)
-                   mALSADevice->setVoLTEVolume(vol);
+               mALSADevice->setVoiceVolume(vol);
         }
     }
 
@@ -2359,17 +2354,7 @@ status_t AudioHardwareALSA::setMicMute(bool state)
               mMicMute = state;
               ALOGD("setMicMute: mMicMute %d", mMicMute);
               if(mALSADevice) {
-                 if(mVoiceCallState == CALL_ACTIVE ||
-                    mVoiceCallState == CALL_LOCAL_HOLD)
-                     mALSADevice->setMicMute(state);
-
-                 if(mVoice2CallState == CALL_ACTIVE ||
-                    mVoice2CallState == CALL_LOCAL_HOLD)
-                     mALSADevice->setVoice2MicMute(state);
-
-                 if(mVolteCallState == CALL_ACTIVE ||
-                    mVolteCallState == CALL_LOCAL_HOLD)
-                     mALSADevice->setVoLTEMicMute(state);
+                  mALSADevice->setMicMute(state);
               }
         }
     }
