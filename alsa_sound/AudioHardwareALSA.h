@@ -127,7 +127,7 @@ class AudioHardwareALSA;
 #define CALL_STATE_KEY      "call_state"
 #define VOLUME_BOOST_KEY    "volume_boost"
 #define AUDIO_PARAMETER_KEY_FM_VOLUME "fm_volume"
-
+#define ECHO_SUPRESSION     "ec_supported"
 
 #define ANC_FLAG        0x00000001
 #define DMIC_FLAG       0x00000002
