@@ -2521,13 +2521,35 @@ void ALSADevice::enableFENS(bool flag, uint32_t vsid)
 void ALSADevice::enableSlowTalk(bool flag, uint32_t vsid)
 {
     int err = 0;
+    char** setValues;
+    int state = 0;
 
-    ALOGD("enableSlowTalk: flag %d", flag);
-    if(flag == true) {
-        setMixerControl("Slowtalk Enable", 1, 0);
-    } else {
-        setMixerControl("Slowtalk Enable", 0, 0);
+    ALOGD("enableSlowTalk: flag %d session_id=%#x", flag, vsid);
+    setValues = (char**)malloc(2*sizeof(char*));
+    if (setValues == NULL) {
+          return;
     }
+    setValues[0] = (char*)malloc(4*sizeof(char));
+    if (setValues[0] == NULL) {
+          free(setValues);
+          return;
+    }
+
+    setValues[1] = (char*)malloc(4*sizeof(char));
+    if (setValues[1] == NULL) {
+          free(setValues[0]);
+          free(setValues);
+          return;
+    }
+
+    state = ((flag == true) ? 1 : 0);
+    snprintf(setValues[0], 4*sizeof(char), "%d", state);
+    snprintf(setValues[1], 4*sizeof(char), "%u", ALL_SESSION_VSID);
+
+    setMixerControlExt("Slowtalk Enable", 2, setValues);
+    free(setValues[1]);
+    free(setValues[0]);
+    free(setValues);
 
 #ifdef QCOM_CSDCLIENT_ENABLED
     if (isPlatformFusion3()) {
