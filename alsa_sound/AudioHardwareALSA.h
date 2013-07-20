@@ -487,6 +487,8 @@ public:
                                 int param_id, int param_val);
     status_t setDDPEndpParams(alsa_handle_t *handle, int device, int dev_ch_cap,
                                char *ddpEndpParams, int *length, bool send_params);
+
+    status_t getRMS(int *valp);
 #ifdef SEPERATED_AUDIO_INPUT
     void     setInput(int);
 #endif

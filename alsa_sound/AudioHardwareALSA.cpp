@@ -1108,6 +1108,19 @@ String8 AudioHardwareALSA::getParameters(const String8& keys)
         param.addInt(key, cardInfo->card);
     }
 
+    key = String8("RMS");
+    if (param.get(key, value) == NO_ERROR) {
+        int val = 0;
+        int err = 0;
+        err = mALSADevice->getRMS(&val);
+        if (NO_ERROR != err) {
+            val = 0;
+            ALOGE("error querying RMS");
+        }
+        ALOGE("RMS value = %d", val);
+        param.addInt(key, val);
+    }
+
 #ifdef QCOM_LISTEN_FEATURE_ENABLE
     if (mListenHw) {
         mListenHw->getParameters(keys);

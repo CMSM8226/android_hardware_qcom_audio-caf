@@ -3397,4 +3397,17 @@ void ALSADevice::setSpkrProtHandle(AudioSpeakerProtection *handle)
         mSpkrProt = handle;
     }
 }
+
+status_t ALSADevice::getRMS(int *valp) {
+    status_t err = NO_ERROR;
+    unsigned data = 0;
+    if(err == NO_ERROR) {
+        err = getMixerControl("Get RMS", data, 0);
+        if(err == NO_ERROR) {
+            *valp = data;
+        }
+    }
+    return err;
+}
+
 }
