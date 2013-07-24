@@ -1121,6 +1121,11 @@ String8 AudioHardwareALSA::getParameters(const String8& keys)
         param.addInt(key, val);
     }
 
+    key = String8("VOIP_STREAM");
+    if (param.get(key, value) == NO_ERROR) {
+        param.addInt(key, mVoipOutStreamCount);
+    }
+
 #ifdef QCOM_LISTEN_FEATURE_ENABLE
     if (mListenHw) {
         mListenHw->getParameters(keys);
