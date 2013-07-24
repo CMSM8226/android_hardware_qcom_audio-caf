@@ -153,6 +153,8 @@ ssize_t AudioStreamInALSA::read(void *buffer, ssize_t bytes)
             if ((mHandle->devices == AudioSystem::DEVICE_IN_VOICE_CALL) &&
                 (newMode == AUDIO_MODE_IN_CALL)) {
                 ALOGD("read:: mParent->mIncallMode=%d", mParent->mIncallMode);
+
+                uint32_t sessionVsid = mParent->getActiveSessionVSID();
                 if ((mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_UPLINK) &&
                     (mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_DNLINK)) {
 #ifdef QCOM_CSDCLIENT_ENABLED
@@ -172,8 +174,10 @@ ssize_t AudioStreamInALSA::read(void *buffer, ssize_t bytes)
                             strlcpy(mHandle->useCase, SND_USE_CASE_MOD_CAPTURE_COMPRESSED_VOICE_UL_DL,
                                     sizeof(mHandle->useCase));
                         } else {
-                            strlcpy(mHandle->useCase, SND_USE_CASE_MOD_CAPTURE_VOICE_UL_DL,
-                                    sizeof(mHandle->useCase));
+                            mParent->mALSADevice->setVocSessionId(sessionVsid);
+                            strlcpy(mHandle->useCase,
+                                    SND_USE_CASE_MOD_CAPTURE_VOICE_UL_DL,
+                                    sizeof(SND_USE_CASE_MOD_CAPTURE_VOICE_UL_DL));
                         }
                     }
                 } else if (mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_DNLINK) {
@@ -194,12 +198,15 @@ ssize_t AudioStreamInALSA::read(void *buffer, ssize_t bytes)
                             strlcpy(mHandle->useCase, SND_USE_CASE_MOD_CAPTURE_COMPRESSED_VOICE_DL,
                                     sizeof(mHandle->useCase));
                         } else {
-                            strlcpy(mHandle->useCase, SND_USE_CASE_MOD_CAPTURE_VOICE_DL,
-                                    sizeof(mHandle->useCase));
+                            mParent->mALSADevice->setVocSessionId(sessionVsid);
+                            strlcpy(mHandle->useCase,
+                                    SND_USE_CASE_MOD_CAPTURE_VOICE_DL,
+                                    sizeof(SND_USE_CASE_MOD_CAPTURE_VOICE_DL));
                         }
                     }
                 } else if (mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_UPLINK) {
                     if (mParent->mFusion3Platform == false) {
+                        mParent->mALSADevice->setVocSessionId(sessionVsid);
                         strlcpy(mHandle->useCase, SND_USE_CASE_MOD_CAPTURE_VOICE_UL,
                                 sizeof(SND_USE_CASE_MOD_CAPTURE_VOICE_UL));
                     } else {
@@ -236,6 +243,8 @@ ssize_t AudioStreamInALSA::read(void *buffer, ssize_t bytes)
             if ((mHandle->devices == AudioSystem::DEVICE_IN_VOICE_CALL) &&
                 (newMode == AUDIO_MODE_IN_CALL)) {
                 ALOGD("read:: ---- mParent->mIncallMode=%d", mParent->mIncallMode);
+
+                uint32_t sessionVsid = mParent->getActiveSessionVSID();
                 if ((mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_UPLINK) &&
                     (mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_DNLINK)) {
 #ifdef QCOM_CSDCLIENT_ENABLED
@@ -257,8 +266,9 @@ ssize_t AudioStreamInALSA::read(void *buffer, ssize_t bytes)
                             strlcpy(mHandle->useCase, SND_USE_CASE_VERB_CAPTURE_COMPRESSED_VOICE_UL_DL,
                                     sizeof(mHandle->useCase));
                         } else {
+                            mParent->mALSADevice->setVocSessionId(sessionVsid);
                             strlcpy(mHandle->useCase, SND_USE_CASE_VERB_UL_DL_REC,
-                                    sizeof(mHandle->useCase));
+                                    sizeof(SND_USE_CASE_VERB_UL_DL_REC));
                         }
                     }
                 } else if (mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_DNLINK) {
@@ -281,12 +291,14 @@ ssize_t AudioStreamInALSA::read(void *buffer, ssize_t bytes)
                                     sizeof(mHandle->useCase));
                         }
                         else {
+                            mParent->mALSADevice->setVocSessionId(sessionVsid);
                             strlcpy(mHandle->useCase, SND_USE_CASE_VERB_DL_REC,
-                                    sizeof(mHandle->useCase));
+                                    sizeof(SND_USE_CASE_VERB_DL_REC));
                         }
                    }
                 } else if (mParent->mIncallMode & AUDIO_CHANNEL_IN_VOICE_UPLINK) {
                     if (mParent->mFusion3Platform == false) {
+                        mParent->mALSADevice->setVocSessionId(sessionVsid);
                         strlcpy(mHandle->useCase, SND_USE_CASE_VERB_UL_REC,
                                 sizeof(SND_USE_CASE_VERB_UL_REC));
                     } else {

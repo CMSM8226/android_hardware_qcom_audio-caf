@@ -454,6 +454,7 @@ public:
     status_t startFm(alsa_handle_t *handle);
     status_t startSpkProtRxTx(alsa_handle_t *handle, bool is_rx);
     bool     isSpeakerinUse(unsigned long &secs);
+    status_t     setVocSessionId(uint32_t sessionId);
     void     setVoiceVolume(int volume);
     void     setVoipVolume(int volume);
     void     setMicMute(int state);
@@ -1093,6 +1094,7 @@ public:
 
     void pauseIfUseCaseTunnelOrLPA();
     void resumeIfUseCaseTunnelOrLPA();
+    uint32_t getActiveSessionVSID();
 private:
     AudioSpeakerProtection mspkrProtection;
     status_t     openExtOutput(int device);

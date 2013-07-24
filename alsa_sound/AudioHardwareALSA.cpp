@@ -518,6 +518,23 @@ status_t AudioHardwareALSA::setVoiceVolume(float v)
     return NO_ERROR;
 }
 
+uint32_t AudioHardwareALSA::getActiveSessionVSID()
+{
+    uint32_t sessionVsid = 0;
+
+    if (mVoiceCallState == CALL_ACTIVE) {
+        sessionVsid = VOICE_SESSION_VSID;
+    } else if (mVoice2CallState == CALL_ACTIVE) {
+        sessionVsid = VOICE2_SESSION_VSID;
+    } else if (mVolteCallState == CALL_ACTIVE) {
+        sessionVsid = VOLTE_SESSION_VSID;
+    } else {
+        ALOGD("There is no Voice/Volte session in ACTIVE state");
+    }
+
+    return sessionVsid;
+}
+
 #ifdef QCOM_FM_ENABLED
 #ifndef QCOM_FM_V2_ENABLED
 status_t  AudioHardwareALSA::setFmVolume(float value)
@@ -1974,7 +1991,6 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
     char *use_case;
     int newMode = mode();
     uint32_t route_devices;
-
     status_t err = BAD_VALUE;
     AudioStreamInALSA *in = 0;
     ALSAHandleList::iterator it;
@@ -2110,6 +2126,10 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
         alsa_handle.bufferSize = bufferSize;
         alsa_handle.devices = devices;
         alsa_handle.handle = 0;
+        uint32_t sessionVsid = getActiveSessionVSID();
+
+        ALOGD("Active voice sessionVsid: %d", sessionVsid);
+
         if(*format == AUDIO_FORMAT_PCM_16_BIT)
             alsa_handle.format = SNDRV_PCM_FORMAT_S16_LE;
         else
@@ -2124,6 +2144,10 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
             if ((devices == AudioSystem::DEVICE_IN_VOICE_CALL) &&
                 (newMode == AUDIO_MODE_IN_CALL)) {
                 ALOGD("openInputStream: into incall recording, channels %d", *channels);
+
+                if ((!sessionVsid) && (mFusion3Platform == false)) {
+                    return NULL;
+                }
                 mIncallMode = *channels;
                 if ((*channels & AUDIO_CHANNEL_IN_VOICE_UPLINK) &&
                     (*channels & AUDIO_CHANNEL_IN_VOICE_DNLINK)) {
@@ -2136,8 +2160,10 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
                             strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_CAPTURE_COMPRESSED_VOICE_UL_DL,
                                     sizeof(alsa_handle.useCase));
                         } else {
-                            strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_CAPTURE_VOICE_UL_DL,
-                                    sizeof(alsa_handle.useCase));
+                            mALSADevice->setVocSessionId(sessionVsid);
+                            strlcpy(alsa_handle.useCase,
+                                    SND_USE_CASE_MOD_CAPTURE_VOICE_UL_DL,
+                                    sizeof(SND_USE_CASE_MOD_CAPTURE_VOICE_UL_DL));
                         }
                     }
                 } else if (*channels & AUDIO_CHANNEL_IN_VOICE_DNLINK) {
@@ -2150,13 +2176,17 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
                             strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_CAPTURE_COMPRESSED_VOICE_DL,
                                     sizeof(alsa_handle.useCase));
                         } else {
-                            strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_CAPTURE_VOICE_DL,
-                                    sizeof(alsa_handle.useCase));
-                        }
-                    }
+                            mALSADevice->setVocSessionId(sessionVsid);
+                            strlcpy(alsa_handle.useCase,
+                                    SND_USE_CASE_MOD_CAPTURE_VOICE_DL,
+                                    sizeof(SND_USE_CASE_MOD_CAPTURE_VOICE_DL));
+                       }
+                   }
                 } else if (*channels & AUDIO_CHANNEL_IN_VOICE_UPLINK) {
                    if (mFusion3Platform == false) {
-                       strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_CAPTURE_VOICE_UL,
+                       mALSADevice->setVocSessionId(sessionVsid);
+                       strlcpy(alsa_handle.useCase,
+                               SND_USE_CASE_MOD_CAPTURE_VOICE_UL,
                                sizeof(SND_USE_CASE_MOD_CAPTURE_VOICE_UL));
                    } else {
                        /* Use normal audio recording for Fusion3 target, this behavior
@@ -2188,6 +2218,9 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
             if ((devices == AudioSystem::DEVICE_IN_VOICE_CALL) &&
                 (newMode == AUDIO_MODE_IN_CALL)) {
                 ALOGD("openInputStream: incall recording, channels %d", *channels);
+                if ((!sessionVsid) && (mFusion3Platform == false)) {
+                    return NULL;
+                }
                 mIncallMode = *channels;
                 if ((*channels & AUDIO_CHANNEL_IN_VOICE_UPLINK) &&
                     (*channels & AUDIO_CHANNEL_IN_VOICE_DNLINK)) {
@@ -2200,8 +2233,9 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
                             strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_CAPTURE_COMPRESSED_VOICE_UL_DL,
                                     sizeof(alsa_handle.useCase));
                         } else {
+                            mALSADevice->setVocSessionId(sessionVsid);
                             strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_UL_DL_REC,
-                                    sizeof(alsa_handle.useCase));
+                                    sizeof(SND_USE_CASE_VERB_UL_DL_REC));
                         }
                     }
                 } else if (*channels & AUDIO_CHANNEL_IN_VOICE_DNLINK) {
@@ -2214,12 +2248,14 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
                             strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_CAPTURE_COMPRESSED_VOICE_DL,
                                     sizeof(alsa_handle.useCase));
                         } else {
+                            mALSADevice->setVocSessionId(sessionVsid);
                             strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_DL_REC,
                                     sizeof(alsa_handle.useCase));
                         }
                     }
                 } else if (*channels & AUDIO_CHANNEL_IN_VOICE_UPLINK) {
                    if (mFusion3Platform == false) {
+                       mALSADevice->setVocSessionId(sessionVsid);
                        strlcpy(alsa_handle.useCase, SND_USE_CASE_VERB_UL_REC,
                                sizeof(SND_USE_CASE_VERB_UL_REC));
                    } else {
