@@ -952,7 +952,7 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
         if (param.getInt(key, (int &)call_state) == NO_ERROR) {
             param.remove(key);
             mCallState = call_state;
-            ALOGV("%s() vsid:%x, callstate:%x", __func__, mVSID, call_state);
+            ALOGD("%s() vsid:%x, callstate:%x", __func__, mVSID, call_state);
 
             if(isAnyCallActive())
                 doRouting(0);
@@ -2802,14 +2802,14 @@ bool AudioHardwareALSA::routeCall(int device, int newMode, uint32_t vsid)
         return isRouted;
     }
 
-    ALOGV("%s: CurCallState=%x newCallState=%x, vsid =%x",
+    ALOGD("%s: CurCallState=%x newCallState=%x, vsid =%x",
           __func__, *curCallState, newCallState, vsid);
 
 
     switch (newCallState) {
     case CALL_INACTIVE:
         if (*curCallState != CALL_INACTIVE) {
-            ALOGV("%s: Disabling call for vsid:%x", __func__, vsid);
+            ALOGD("%s: Disabling call for vsid:%x", __func__, vsid);
 
             disableVoiceCall(newMode, device, vsid);
             isRouted = true;
@@ -2821,20 +2821,20 @@ bool AudioHardwareALSA::routeCall(int device, int newMode, uint32_t vsid)
 
     case CALL_ACTIVE:
         if (*curCallState == CALL_INACTIVE) {
-            ALOGV("%s(): Start call for vsid:%x ",__func__, vsid);
+            ALOGD("%s(): Start call for vsid:%x ",__func__, vsid);
 
             enableVoiceCall(newMode, device, vsid);
             isRouted = true;
             *curCallState = CALL_ACTIVE;
 
         } else if (*curCallState == CALL_HOLD) {
-            ALOGV("%s(): Resume call from hold state for vsid:%x",
+            ALOGD("%s(): Resume call from hold state for vsid:%x",
                   __func__, vsid);
 
             *curCallState = CALL_ACTIVE;
             isRouted = true;
         } else if(*curCallState == CALL_LOCAL_HOLD) {
-            ALOGV("%s: Resume call from local call hold state \
+            ALOGD("%s: Resume call from local call hold state \
                    for vsid:%x",__func__, vsid);
 
             handle = getALSADeviceHandleForVSID(vsid);
@@ -2858,7 +2858,7 @@ bool AudioHardwareALSA::routeCall(int device, int newMode, uint32_t vsid)
     case CALL_HOLD:
         if (*curCallState == CALL_ACTIVE ||
             *curCallState == CALL_LOCAL_HOLD) {
-            ALOGV("%s(): Call going to Hold for vsid:%x",__func__, vsid);
+            ALOGD("%s(): Call going to Hold for vsid:%x",__func__, vsid);
 
             handle = getALSADeviceHandleForVSID(vsid);
             if (handle) {
@@ -2886,7 +2886,7 @@ bool AudioHardwareALSA::routeCall(int device, int newMode, uint32_t vsid)
 
     case CALL_LOCAL_HOLD:
         if (*curCallState == CALL_ACTIVE || *curCallState == CALL_HOLD) {
-            ALOGV("%s(): Call going to local Hold for vsid:%x", __func__, vsid);
+            ALOGD("%s(): Call going to local Hold for vsid:%x", __func__, vsid);
 
             handle = getALSADeviceHandleForVSID(vsid);
             if (handle) {
