@@ -1841,8 +1841,12 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
           } else if(!strncmp(it->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2,
              MAX_LEN(it->useCase, SND_USE_CASE_VERB_INCALL_DELIVERY2))) {
              snd_use_case_set(mUcMgr, "_verb", SND_USE_CASE_VERB_INCALL_DELIVERY2);
-          } else {
+          } else if(!strncmp(it->useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2,
+             MAX_LEN(it->useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2))) {
              snd_use_case_set(mUcMgr, "_enamod", SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2);
+          } else {
+             ALOGV("Incall music delivery is not enabled on any session");
+             return NULL;
           }
 #endif
       } else
