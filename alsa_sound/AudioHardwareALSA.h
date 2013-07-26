@@ -128,6 +128,7 @@ class AudioHardwareALSA;
 #define VOLUME_BOOST_KEY    "volume_boost"
 #define AUDIO_PARAMETER_KEY_FM_VOLUME "fm_volume"
 #define ECHO_SUPRESSION     "ec_supported"
+#define ALL_CALL_STATES_KEY "all_call_states"
 
 #define ANC_FLAG        0x00000001
 #define DMIC_FLAG       0x00000002
@@ -347,6 +348,7 @@ static struct mDDPEndpParams {
 #define VOICE_SESSION_VSID  0x10C01000
 #define VOICE2_SESSION_VSID 0x10DC1000
 #define VOLTE_SESSION_VSID  0x10C02000
+#define QCHAT_SESSION_VSID  0x10803000
 #define ALL_SESSION_VSID    0xFFFFFFFF
 #define DEFAULT_MUTE_RAMP_DURATION      500
 #define DEFAULT_VOLUME_RAMP_DURATION_MS 20
@@ -1181,6 +1183,7 @@ protected:
     int mVoiceCallState;
     int mVolteCallState;
     int mVoice2CallState;
+    int mQchatCallState;
     int mCallState;
     uint32_t mVSID;
     int mVoiceVolFeatureSet;
