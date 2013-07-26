@@ -110,6 +110,7 @@ class AudioHardwareALSA;
 #define MODE_AMR                0x5
 #define MODE_AMR_WB             0xD
 #define MODE_PCM                0xC
+#define MODE_4GV_NW             0xE
 
 #define DUALMIC_KEY         "dualmic_enabled"
 #define FLUENCE_KEY         "fluence"

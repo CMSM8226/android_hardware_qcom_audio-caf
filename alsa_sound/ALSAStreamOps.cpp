@@ -163,6 +163,7 @@ status_t ALSAStreamOps::set(int      *format,
             case AUDIO_FORMAT_EVRC:
             case AUDIO_FORMAT_EVRCB:
             case AUDIO_FORMAT_EVRCWB:
+            case AUDIO_FORMAT_EVRCNW:
 #endif
                 iformat = *format;
                 break;
@@ -427,6 +428,7 @@ int ALSAStreamOps::format() const
         case AUDIO_FORMAT_EVRC:
         case AUDIO_FORMAT_EVRCB:
         case AUDIO_FORMAT_EVRCWB:
+        case AUDIO_FORMAT_EVRCNW:
 #endif
             audioSystemFormat = mHandle->format;
             break;

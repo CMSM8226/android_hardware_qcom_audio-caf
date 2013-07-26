@@ -516,6 +516,7 @@ status_t ALSADevice::setHardwareParams(alsa_handle_t *handle)
             || handle->format == AUDIO_FORMAT_EVRC
             || handle->format == AUDIO_FORMAT_EVRCB
             || handle->format == AUDIO_FORMAT_EVRCWB
+            || handle->format == AUDIO_FORMAT_EVRCNW
 #endif
             ) {
             if ((strcmp(handle->useCase, SND_USE_CASE_VERB_HIFI_TUNNEL)) &&
