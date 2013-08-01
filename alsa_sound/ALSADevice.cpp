@@ -1044,6 +1044,10 @@ status_t ALSADevice::open(alsa_handle_t *handle)
 
     if (deviceName(handle, flags, &devName) < 0) {
         ALOGE("Failed to get pcm device node: %s", devName);
+        if (devName) {
+            free(devName);
+            devName = NULL;
+        }
         return NO_INIT;
     }
     if (devName != NULL) {
@@ -1108,6 +1112,10 @@ status_t ALSADevice::startVoipCall(alsa_handle_t *handle)
 
     if (deviceName(handle, flags, &devName) < 0) {
          ALOGE("Failed to get pcm device node");
+         if (devName) {
+            free(devName);
+            devName = NULL;
+         }
          return NO_INIT;
     }
 
@@ -1158,6 +1166,10 @@ status_t ALSADevice::startVoipCall(alsa_handle_t *handle)
 
      if (deviceName(handle, flags, &devName) < 0) {
         ALOGE("Failed to get pcm device node");
+        if (devName) {
+            free(devName);
+            devName = NULL;
+        }
         return NO_INIT;
      }
     if (devName != NULL) {
@@ -1217,6 +1229,10 @@ status_t ALSADevice::startVoiceCall(alsa_handle_t *handle, uint32_t vsid)
     flags = PCM_OUT | PCM_MONO;
     if (deviceName(handle, flags, &devName) < 0) {
         ALOGE("Failed to get pcm device node");
+        if (devName) {
+            free(devName);
+            devName = NULL;
+        }
         return NO_INIT;
     }
     if (devName != NULL) {
