@@ -2313,36 +2313,14 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
             {
             route_devices = devices | mCurDevice;
             }
-            mALSADevice->route(&(*it), route_devices, mode());
         } else {
 #ifdef QCOM_USBAUDIO_ENABLED
             if(devices & AudioSystem::DEVICE_IN_ANLG_DOCK_HEADSET ||
                devices & AudioSystem::DEVICE_IN_PROXY) {
                 devices |= AudioSystem::DEVICE_IN_PROXY;
                 ALOGD("routing everything from proxy");
-            mALSADevice->route(&(*it), devices, mode());
-            } else
-#endif
-            {
-                mALSADevice->route(&(*it), devices, mode());
             }
-        }
-
-        if(!strcmp(it->useCase, SND_USE_CASE_VERB_HIFI_REC) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_HIFI_LOWLATENCY_REC) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_HIFI_REC_COMPRESSED) ||
-#ifdef QCOM_FM_ENABLED
-           !strcmp(it->useCase, SND_USE_CASE_VERB_FM_REC) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_FM_A2DP_REC) ||
 #endif
-           !strcmp(it->useCase, SND_USE_CASE_VERB_DL_REC) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_UL_DL_REC) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_CAPTURE_COMPRESSED_VOICE_DL) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_CAPTURE_COMPRESSED_VOICE_UL_DL) ||
-           !strcmp(it->useCase, SND_USE_CASE_VERB_INCALL_REC)) {
-            snd_use_case_set(mUcMgr, "_verb", it->useCase);
-        } else {
-            snd_use_case_set(mUcMgr, "_enamod", it->useCase);
         }
         if(sampleRate) {
             it->sampleRate = *sampleRate;
@@ -2369,20 +2347,15 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
             }
         }
 #endif
-        err = mALSADevice->open(&(*it));
+        in = new AudioStreamInALSA(this, &(*it), acoustics);
+        err = in->set(format, channels, sampleRate, devices);
         if (err) {
-           mDeviceList.erase(it);
-           ALOGE("Error opening pcm input device");
-        #ifdef QCOM_LISTEN_FEATURE_ENABLE
+#ifdef QCOM_LISTEN_FEATURE_ENABLE
             //Notify to listen HAL that Audio capture is inactive
             if (mListenHw) {
                 mListenHw->notifyEvent(AUDIO_CAPTURE_INACTIVE);
             }
-        #endif
-
-        } else {
-           in = new AudioStreamInALSA(this, &(*it), acoustics);
-           err = in->set(format, channels, sampleRate, devices);
+#endif
         }
         if (status) *status = err;
         return in;
