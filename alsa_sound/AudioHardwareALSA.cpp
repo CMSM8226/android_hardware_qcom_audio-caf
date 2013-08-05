@@ -179,12 +179,12 @@ AudioHardwareALSA::AudioHardwareALSA() :
            acdb_init();
 
            acdb_reload_vocvol = (int (*)(int, int, int))::dlsym(mAcdbHandle,"acdb_loader_reload_vocvoltable");
-	   if (acdb_reload_vocvol == NULL)
-	       ALOGE("dlsym:Error:%s Loading acdb_reload_vocvol");
+       if (acdb_reload_vocvol == NULL)
+           ALOGE("dlsym:Error:%s Loading acdb_reload_vocvol");
 
            acdb_deallocate = (void (*)())::dlsym(mAcdbHandle,"acdb_loader_deallocate_ACDB");
-	   if (acdb_deallocate == NULL)
-	       ALOGE("dlsym:Error:%s Loading acdb_deallocate");
+       if (acdb_deallocate == NULL)
+           ALOGE("dlsym:Error:%s Loading acdb_deallocate");
            acdb_send_audio_cal =
            (void (*)(int, int))::dlsym(mAcdbHandle,"acdb_loader_send_audio_cal");
         }
@@ -374,7 +374,7 @@ AudioHardwareALSA::AudioHardwareALSA() :
         ALOGD("Speaker Protection disabled");
 
 #ifdef QCOM_LISTEN_FEATURE_ENABLE
-    mListenHw = new ListenHardware(mUcMgr, mAcdbHandle);
+    mListenHw = new ListenHardware(mUcMgr, mAcdbHandle, (const char*)cardInfo->name);
     if (mListenHw == NULL) {
         ALOGE("Failed to create ListenHardware");
     }
