@@ -588,6 +588,8 @@ const char *use_case)
         strlen(SND_USE_CASE_VERB_VOLTE))) ||
         (!strncmp(use_case, SND_USE_CASE_VERB_IP_VOICECALL,
         strlen(SND_USE_CASE_VERB_IP_VOICECALL))) ||
+        (!strncmp(use_case, SND_USE_CASE_VERB_QCHAT,
+        strlen(SND_USE_CASE_VERB_QCHAT))) ||
         (!strncmp(use_case, SND_USE_CASE_MOD_PLAY_VOICE,
         strlen(SND_USE_CASE_MOD_PLAY_VOICE))) ||
         (!strncmp(use_case, SND_USE_CASE_MOD_PLAY_VOICE2,
@@ -595,7 +597,9 @@ const char *use_case)
         (!strncmp(use_case, SND_USE_CASE_MOD_PLAY_VOLTE,
         strlen(SND_USE_CASE_MOD_PLAY_VOLTE))) ||
         (!strncmp(use_case, SND_USE_CASE_MOD_PLAY_VOIP,
-        strlen(SND_USE_CASE_MOD_PLAY_VOIP)))) {
+        strlen(SND_USE_CASE_MOD_PLAY_VOIP))) ||
+        (!strncmp(use_case, SND_USE_CASE_MOD_PLAY_QCHAT,
+        strlen(SND_USE_CASE_MOD_PLAY_QCHAT)))) {
         ALOGV("check_devices_for_voice_call(): voice cap detected\n");
         list_size =
         snd_ucm_get_size_of_list(uc_mgr->card_ctxt_ptr->dev_list_head);
@@ -639,7 +643,9 @@ int use_case_index)
         SND_USE_CASE_VERB_VOICE2, strlen(SND_USE_CASE_VERB_VOICE2))) ||
         (!strncmp(uc_mgr->card_ctxt_ptr->current_verb,
         SND_USE_CASE_VERB_IP_VOICECALL,
-        strlen(SND_USE_CASE_VERB_IP_VOICECALL)))) {
+        strlen(SND_USE_CASE_VERB_IP_VOICECALL))) ||
+       (!strncmp(uc_mgr->card_ctxt_ptr->current_verb,
+        SND_USE_CASE_VERB_QCHAT, strlen(SND_USE_CASE_VERB_QCHAT)))) {
         voice_acdb = 1;
     }
     if (voice_acdb != 1) {
@@ -656,7 +662,9 @@ int use_case_index)
                     (!strncmp(ident_value, SND_USE_CASE_MOD_PLAY_VOICE2,
                     strlen(SND_USE_CASE_MOD_PLAY_VOICE2))) ||
                     (!strncmp(ident_value, SND_USE_CASE_MOD_PLAY_VOIP,
-                    strlen(SND_USE_CASE_MOD_PLAY_VOIP)))) {
+                    strlen(SND_USE_CASE_MOD_PLAY_VOIP))) ||
+                    (!strncmp(ident_value, SND_USE_CASE_MOD_PLAY_QCHAT,
+                    strlen(SND_USE_CASE_MOD_PLAY_QCHAT)))) {
                     voice_acdb = 1;
                     strlcpy(current_mod, ident_value, MAX_STR_LEN);
                     free(ident_value);
@@ -1052,7 +1060,11 @@ int getUseCaseType(const char *useCase)
         !strncmp(useCase, SND_USE_CASE_VERB_VOLTE,
             MAX_LEN(useCase,SND_USE_CASE_VERB_VOLTE)) ||
         !strncmp(useCase, SND_USE_CASE_MOD_PLAY_VOLTE,
-            MAX_LEN(useCase, SND_USE_CASE_MOD_PLAY_VOLTE))) {
+            MAX_LEN(useCase, SND_USE_CASE_MOD_PLAY_VOLTE)) ||
+        !strncmp(useCase, SND_USE_CASE_VERB_QCHAT,
+            MAX_LEN(useCase,SND_USE_CASE_VERB_QCHAT)) ||
+        !strncmp(useCase, SND_USE_CASE_MOD_PLAY_QCHAT,
+            MAX_LEN(useCase, SND_USE_CASE_MOD_PLAY_QCHAT))) {
         return CAP_VOICE;
     } else {
         ALOGE("unknown use case %s, returning voice capablity", useCase);
