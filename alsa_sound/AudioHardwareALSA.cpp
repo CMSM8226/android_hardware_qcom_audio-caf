@@ -106,6 +106,7 @@ AudioHardwareALSA::AudioHardwareALSA() :
     mVoiceCallState = CALL_INACTIVE;
     mVolteCallState = CALL_INACTIVE;
     mVoice2CallState = CALL_INACTIVE;
+    mQchatCallState = CALL_INACTIVE;
     mVSID = 0;
     mVoiceVolFeatureSet = 0;
     mIsFmActive = 0;
@@ -528,6 +529,8 @@ uint32_t AudioHardwareALSA::getActiveSessionVSID()
         sessionVsid = VOICE2_SESSION_VSID;
     } else if (mVolteCallState == CALL_ACTIVE) {
         sessionVsid = VOLTE_SESSION_VSID;
+    } else if (mQchatCallState == CALL_ACTIVE) {
+        sessionVsid = QCHAT_SESSION_VSID;
     } else {
         ALOGD("There is no Voice/Volte session in ACTIVE state");
     }
@@ -659,7 +662,10 @@ bool AudioHardwareALSA::isAnyCallActive() {
         (mVolteCallState == CALL_LOCAL_HOLD) ||
         (mVoice2CallState == CALL_ACTIVE) ||
         (mVoice2CallState == CALL_HOLD) ||
-        (mVoice2CallState == CALL_LOCAL_HOLD)) {
+        (mVoice2CallState == CALL_LOCAL_HOLD) ||
+        (mQchatCallState == CALL_ACTIVE) ||
+        (mQchatCallState == CALL_HOLD) ||
+        (mQchatCallState == CALL_LOCAL_HOLD)) {
         ret = true;
     }
     ALOGV("%s() ret=%d", __func__, ret);
@@ -1005,6 +1011,21 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
     return status;
 }
 
+// Returns a string in the format: "vsid:CallState"
+String8 makeVsidCallStatePair(uint32_t vsid, int callState)
+{
+       char str[11];
+       String8 pair = String8("");
+
+       snprintf(str, 11, "%u", vsid);
+       pair += String8(str);
+       pair += ":";
+       snprintf(str, 2, "%d", callState);
+       pair += String8(str);
+
+       return pair;
+}
+
 String8 AudioHardwareALSA::getParameters(const String8& keys)
 {
     AudioParameter param = AudioParameter(keys);
@@ -1143,6 +1164,28 @@ String8 AudioHardwareALSA::getParameters(const String8& keys)
         param.addInt(key, mVoipOutStreamCount);
     }
 
+     /* Returns a value in the format:
+     "all_call_states=281022464:1,282857472:1,281026560:1,276836352:1"
+     */
+    key = String8(ALL_CALL_STATES_KEY);
+    if (param.get(key, value) == NO_ERROR)
+    {
+       String8 value = String8("");
+
+       value += makeVsidCallStatePair(VOICE_SESSION_VSID, mVoiceCallState);
+       value += ",";
+
+       value += makeVsidCallStatePair(VOICE2_SESSION_VSID, mVoice2CallState);
+       value += ",";
+
+       value += makeVsidCallStatePair(VOLTE_SESSION_VSID, mVolteCallState);
+       value += ",";
+
+       value += makeVsidCallStatePair(QCHAT_SESSION_VSID, mQchatCallState);
+
+       param.add(key, value);
+    }
+
 #ifdef QCOM_LISTEN_FEATURE_ENABLE
     if (mListenHw) {
         mListenHw->getParameters(keys);
@@ -1251,9 +1294,9 @@ status_t AudioHardwareALSA::doRouting(int device)
 #endif
 
     ALOGV("doRouting: device %#x newMode %d mVoiceCallState %x \
-           mVolteCallActive %x mVoice2CallActive %x mIsFmActive %x",
-          device, newMode, mVoiceCallState,
-          mVolteCallState, mVoice2CallState, mIsFmActive);
+           mVolteCallActive %x mVoice2CallActive %x mIsFmActive %x \
+           mQchatCallState %x", device, newMode, mVoiceCallState,
+          mVolteCallState, mVoice2CallState, mIsFmActive, mQchatCallState);
 
     isRouted = routeCall(device, newMode, mVSID);
 
@@ -2679,6 +2722,10 @@ char *AudioHardwareALSA::getUcmVerbForVSID(uint32_t vsid)
            verb = SND_USE_CASE_VERB_VOICECALL;
            break;
 
+       case QCHAT_SESSION_VSID:
+           verb = SND_USE_CASE_VERB_QCHAT;
+           break;
+
         default:
             ALOGE("%s: Invalid vsid:%x", __func__, vsid);
     }
@@ -2703,6 +2750,10 @@ char *AudioHardwareALSA::getUcmModForVSID(uint32_t vsid)
         mod = SND_USE_CASE_MOD_PLAY_VOICE;
         break;
 
+    case QCHAT_SESSION_VSID:
+        mod = SND_USE_CASE_MOD_PLAY_QCHAT;
+        break;
+
     default:
         ALOGE("%s: Invalid vsid:%x", __func__, vsid);
     }
@@ -2725,6 +2776,10 @@ int *AudioHardwareALSA::getCallStateForVSID(uint32_t vsid)
 
     case VOICE_SESSION_VSID:
         callState = &mVoiceCallState;
+        break;
+
+    case QCHAT_SESSION_VSID:
+        callState = &mQchatCallState;
         break;
 
     default:
