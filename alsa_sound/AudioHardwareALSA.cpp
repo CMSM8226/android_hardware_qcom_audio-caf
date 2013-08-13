@@ -1508,6 +1508,9 @@ uint32_t AudioHardwareALSA::getVoipMode(int format)
     case AUDIO_FORMAT_EVRCWB:
                return MODE_4GV_WB;
          break;
+    case AUDIO_FORMAT_EVRCNW:
+               return MODE_4GV_NW;
+         break;
 #endif
     default:
                return MODE_PCM;
@@ -2485,6 +2488,7 @@ size_t AudioHardwareALSA::getInputBufferSize(uint32_t sampleRate, int format, in
         || format == AUDIO_FORMAT_EVRC
         || format == AUDIO_FORMAT_EVRCB
         || format == AUDIO_FORMAT_EVRCWB
+        || format == AUDIO_FORMAT_EVRCNW
 #endif
     ) {
         bufferSize = (sampleRate * channelCount * 20 * sizeof(int16_t)) / 1000;
