@@ -1852,6 +1852,9 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
                } else {
                     strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_PLAY_INCALL_DELIVERY2, sizeof(alsa_handle.useCase));
                }
+          } else {
+              ALOGV("Invalid incall music usecase, return NULL");
+              return NULL;
           }
 #endif
       } else
