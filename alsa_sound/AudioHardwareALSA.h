@@ -130,6 +130,7 @@ class AudioHardwareALSA;
 #define AUDIO_PARAMETER_KEY_FM_VOLUME "fm_volume"
 #define ECHO_SUPRESSION     "ec_supported"
 #define ALL_CALL_STATES_KEY "all_call_states"
+#define CUSTOM_STEREO_KEY   "stereo_as_dual_mono"
 
 #define ANC_FLAG        0x00000001
 #define DMIC_FLAG       0x00000002
@@ -491,8 +492,8 @@ public:
                                 int param_id, int param_val);
     status_t setDDPEndpParams(alsa_handle_t *handle, int device, int dev_ch_cap,
                                char *ddpEndpParams, int *length, bool send_params);
-
     status_t getRMS(int *valp);
+    void setCustomStereoOnOff(bool flag);
 #ifdef SEPERATED_AUDIO_INPUT
     void     setInput(int);
 #endif
