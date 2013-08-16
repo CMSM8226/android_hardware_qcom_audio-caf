@@ -1570,13 +1570,24 @@ audio_devices_t AudioPolicyManager::getNewDevice(audio_io_handle_t output, bool 
     // 6: the strategy DTMF is active on the output:
     //      use device for strategy DTMF
 #ifdef QCOM_APM_VERSION_JBMR2
+
+    bool sonificationFlag =  false;
+    AudioOutputDescriptor *desc;
+    for (size_t i = 0; i < mOutputs.size(); i++) {
+        desc = mOutputs.valueAt(i);
+        sonificationFlag = (desc->isStrategyActive(STRATEGY_SONIFICATION));
+        if(sonificationFlag) {
+           break;
+        }
+    }
+
     if (outputDesc->isStrategyActive(STRATEGY_ENFORCED_AUDIBLE)) {
         device = getDeviceForStrategy(STRATEGY_ENFORCED_AUDIBLE, fromCache);
     } else if (isInCall() ||
                     outputDesc->isStrategyActive(STRATEGY_PHONE)) {
         device = getDeviceForStrategy(STRATEGY_PHONE, fromCache);
     } else if (outputDesc->isStrategyActive(STRATEGY_SONIFICATION) ||
-               primaryOutputDesc->isStrategyActive(STRATEGY_SONIFICATION)) {
+               sonificationFlag) {
         device = getDeviceForStrategy(STRATEGY_SONIFICATION, fromCache);
     } else if (outputDesc->isStrategyActive(STRATEGY_SONIFICATION_RESPECTFUL)) {
         device = getDeviceForStrategy(STRATEGY_SONIFICATION_RESPECTFUL, fromCache);
