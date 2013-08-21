@@ -226,6 +226,8 @@ AudioHardwareALSA::AudioHardwareALSA() :
         snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm", cardInfo->card);
     } else if (!strcmp((const char*)cardInfo->name, "msm8226-tapan-snd-card")) {
         snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_Tapan", cardInfo->card);
+    } else if (!strcmp((const char*)cardInfo->name, "msm8226-tapan9302-snd-card")) {
+        snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_TapanLite", cardInfo->card);
     } else if (!strcmp((const char*)cardInfo->name, "msm8226-tapan-skuf-snd-card")) {
         snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_Tapan_SKUF", cardInfo->card);
     } else if (!strcmp((const char*)cardInfo->name, "msm8960-tabla1x-snd-card") ||
