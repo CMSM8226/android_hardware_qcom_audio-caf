@@ -1005,6 +1005,19 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
         param.remove(key);
     }
 
+    key = String8(CUSTOM_STEREO_KEY);
+    if (param.get(key, value) == NO_ERROR) {
+        bool flag = false;
+        if (value == "true") {
+            flag = true;
+        }
+
+        if(mALSADevice) {
+            mALSADevice->setCustomStereoOnOff(flag);
+        }
+        param.remove(key);
+    }
+
     if (status != NO_ERROR || param.size()) {
         status = BAD_VALUE;
     }

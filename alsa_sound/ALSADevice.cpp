@@ -3461,4 +3461,14 @@ status_t ALSADevice::getRMS(int *valp) {
     return err;
 }
 
+void ALSADevice::setCustomStereoOnOff(bool flag)
+{
+    ALOGD("%s: flag %d",__func__, flag);
+    if(flag == true) {
+        setMixerControl("Set Custom Stereo OnOff", 1, 0);
+    } else {
+        setMixerControl("Set Custom Stereo OnOff", 0, 0);
+    }
+}
+
 }
