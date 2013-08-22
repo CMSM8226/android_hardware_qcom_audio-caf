@@ -844,9 +844,11 @@ status_t AudioSessionOutALSA::dump(int fd, const Vector<String16>& args)
 
 status_t AudioSessionOutALSA::getNextWriteTimestamp(int64_t *timestamp)
 {
+    Mutex::Autolock autoLock(mLock);
     struct snd_compr_tstamp tstamp;
     tstamp.timestamp = -1;
-    if (ioctl(mAlsaHandle->handle->fd, SNDRV_COMPRESS_TSTAMP, &tstamp)){
+    if (mAlsaHandle && mAlsaHandle->handle &&
+        ioctl(mAlsaHandle->handle->fd, SNDRV_COMPRESS_TSTAMP, &tstamp)){
         ALOGE("Failed SNDRV_COMPRESS_TSTAMP\n");
         return UNKNOWN_ERROR;
     } else {
