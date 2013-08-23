@@ -2483,6 +2483,17 @@ void ALSADevice::setVoipConfig(int mode, int rate)
     return;
 }
 
+void ALSADevice::enableVoipDtx(bool enable)
+{
+    status_t err = NO_ERROR;
+
+    ALOGD("enableVoipDtx(): enable=%d", enable);
+
+    err = setMixerControl("Voip Dtx Mode", enable, 0);
+    if (err != NO_ERROR)
+        ALOGE("enableVoipDtx(): enable DTX failed");
+}
+
 status_t ALSADevice::setVocSessionId(uint32_t sessionId)
 {
     status_t err = NO_ERROR;
