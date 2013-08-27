@@ -238,8 +238,13 @@ AudioHardwareALSA::AudioHardwareALSA() :
             (!strcmp("mdm", baseband) || !strcmp("sglte2", baseband))) {
             ALOGD("Detected Fusion tabla 2.x");
             mFusion3Platform = true;
-            if((fp = fopen("/sys/devices/system/soc/soc0/platform_version","r")) == NULL) {
-                ALOGE("Cannot open /sys/devices/system/soc/soc0/platform_version file");
+            if (!access("/sys/devices/soc0/platform_version", F_OK)) {
+                fp = fopen("/sys/devices/soc0/platform_version","r");
+            } else {
+                fp = fopen("/sys/devices/system/soc/soc0/platform_version","r");
+            }
+            if(fp == NULL) {
+                ALOGE("Cannot open /sys/devices/soc0/platform_version file");
 
                 snd_use_case_mgr_create(&mUcMgr, "snd_soc_msm_2x_Fusion3", cardInfo->card);
             } else {
