@@ -312,14 +312,6 @@ status_t AudioPolicyManager::setDeviceConnectionState(audio_devices_t device,
         }
 
         updateDevicesAndOutputs();
-#ifdef QCOM_PROXY_DEVICE_ENABLED
-        if (state == AudioSystem::DEVICE_STATE_AVAILABLE &&
-                audio_is_a2dp_device(device) &&
-                (mAvailableOutputDevices & AUDIO_DEVICE_OUT_PROXY)) {
-            ALOGV("Delay the proxy device open");
-            return NO_ERROR;
-        }
-#endif
 
         audio_devices_t newDevice = getNewDevice(mPrimaryOutput, false /*fromCache*/);
 #ifdef QCOM_FM_ENABLED
