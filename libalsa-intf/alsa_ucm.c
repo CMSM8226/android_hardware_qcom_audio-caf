@@ -259,7 +259,7 @@ int snd_use_case_get_list(snd_use_case_mgr_t *uc_mgr,
  *        CapturePCM
  *        PlaybackCTL
  *        CaptureCTL
- * value - Value pointer
+ * value - Value pointer- caller should free the memory after use
  * returns Zero if success, otherwise a negative error code
  */
 int snd_use_case_get(snd_use_case_mgr_t *uc_mgr,
