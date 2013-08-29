@@ -45,6 +45,7 @@
 #include "AudioUsbALSA.h"
 #endif
 #include "AudioUtil.h"
+#include <linux/msm_audio.h>
 
 //#define OUTPUT_BUFFER_LOG
 #ifdef OUTPUT_BUFFER_LOG
@@ -65,6 +66,7 @@ extern "C"
     static int (*acdb_init)();
     static int (*acdb_reload_vocvol)(int, int, int);
     static void (*acdb_deallocate)();
+    static void (*acdb_send_audio_cal)(int, int);
 #endif
 #ifdef QCOM_CSDCLIENT_ENABLED
     static int (*csd_client_init)();
@@ -79,6 +81,7 @@ extern "C"
 namespace android_audio_legacy
 {
 
+#define CLEAR_TX_CAL_BLOCK 0
 // ----------------------------------------------------------------------------
 
 AudioHardwareInterface *AudioHardwareALSA::create() {
@@ -179,6 +182,8 @@ AudioHardwareALSA::AudioHardwareALSA() :
            acdb_deallocate = (void (*)())::dlsym(mAcdbHandle,"acdb_loader_deallocate_ACDB");
 	   if (acdb_deallocate == NULL)
 	       ALOGE("dlsym:Error:%s Loading acdb_deallocate");
+           acdb_send_audio_cal =
+           (void (*)(int, int))::dlsym(mAcdbHandle,"acdb_loader_send_audio_cal");
         }
     }
     mALSADevice->setACDBHandle(mAcdbHandle);
@@ -2566,6 +2571,8 @@ void AudioHardwareALSA::handleFm(int device)
         } else {
             snd_use_case_set(mUcMgr, "_enamod", SND_USE_CASE_MOD_PLAY_FM);
         }
+        if (acdb_send_audio_cal)
+            acdb_send_audio_cal(CLEAR_TX_CAL_BLOCK, MSM_SNDDEV_CAP_TX);
         mALSADevice->startFm(&(*it));
         activeUsecase = useCaseStringToEnum(it->useCase);
 #ifdef QCOM_USBAUDIO_ENABLED
