@@ -141,6 +141,10 @@ AudioSessionOutALSA::AudioSessionOutALSA(AudioHardwareALSA *parent,
         mSessionStatus = -1;
         return;
     }
+    //start off with mute, the proper volume will be set later
+    mLock.unlock();
+    setVolume(0, 0);
+    mLock.lock();
     //Creates the event thread to poll events from LPA/Compress Driver
     createEventThread();
 
