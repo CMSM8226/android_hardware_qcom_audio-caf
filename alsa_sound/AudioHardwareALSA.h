@@ -1149,7 +1149,7 @@ protected:
 #endif
     void                setInChannels(int device);
     void                disableVoiceCall(int mode, int device, uint32_t vsid = 0);
-    void                enableVoiceCall(int mode, int device, uint32_t vsid = 0);
+    status_t            enableVoiceCall(int mode, int device, uint32_t vsid = 0);
     bool                routeCall(int device, int newMode, uint32_t vsid);
     friend class AudioSessionOutALSA;
     friend class AudioStreamOutALSA;
