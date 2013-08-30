@@ -1014,10 +1014,10 @@ status_t AudioSessionOutALSA::closeDevice(alsa_handle_t *pHandle)
     ALOGD("closeDevice: useCase %s", pHandle->useCase);
     //TODO: remove from mDeviceList
     if(pHandle) {
-        status = mAlsaDevice->close(pHandle);
-	if (mTunnelMode) {
+        if (mTunnelMode) {
             mParent->freeTunnel(pHandle->useCase);
         }
+        status = mAlsaDevice->close(pHandle);
     }
     return status;
 }
