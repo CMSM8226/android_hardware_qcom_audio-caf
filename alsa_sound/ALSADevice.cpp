@@ -1039,6 +1039,8 @@ status_t ALSADevice::open(alsa_handle_t *handle)
         {
             flags |= PCM_5POINT1;
         }
+    } else if (handle->channels == 8 ) {
+            flags |= PCM_7POINT1;
     }
     else {
         flags |= PCM_STEREO;
