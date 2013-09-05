@@ -159,5 +159,9 @@ private:
 
         void handleNotificationRoutingForStream(AudioSystem::stream_type stream);
         bool platform_is_Fusion3();
+#ifdef RESOURCE_MANAGER
+        void checkAndSuspendOutputs();
+        void checkAndRestoreOutputs();
+#endif
 };
 };

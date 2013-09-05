@@ -37,6 +37,9 @@
 #include "ListenHardware.h"
 #endif
 
+#ifdef RESOURCE_MANAGER
+#include "AudioResourceManager.h"
+#endif
 extern "C" {
     #include <sound/asound.h>
     #include <sound/compress_params.h>
@@ -53,8 +56,11 @@ namespace android_audio_legacy
 using android::List;
 using android::Mutex;
 using android::Condition;
-class AudioHardwareALSA;
 
+class AudioHardwareALSA;
+#ifdef RESOURCE_MANAGER
+class AudioResourceManager;
+#endif
 /**
  * The id of ALSA module
  */
@@ -1085,7 +1091,6 @@ public:
     status_t    stopPlaybackOnExtOut_l(uint32_t activeUsecase);
     bool        suspendPlaybackOnExtOut_l(uint32_t activeUsecase);
     status_t    isExtOutDevice(int device);
-
     /**This method dumps the state of the audio hardware */
     //virtual status_t dumpState(int fd, const Vector<String16>& args);
 
@@ -1095,7 +1100,6 @@ public:
     {
         return mMode;
     }
-
     void pauseIfUseCaseTunnelOrLPA();
     void resumeIfUseCaseTunnelOrLPA();
     uint32_t getActiveSessionVSID();
@@ -1127,7 +1131,14 @@ private:
     char*        getUcmVerbForVSID(uint32_t vsid);
     char*        getUcmModForVSID(uint32_t vsid);
     alsa_handle_t* getALSADeviceHandleForVSID(uint32_t vsid);
-
+#ifdef RESOURCE_MANAGER
+    enum {
+       CONCURRENCY_INACTIVE = 0,
+       CONCURRENCY_ACTIVE,
+    };
+    status_t     handleFmConcurrency(int32_t device, uint32_t &state);
+    status_t     setParameterForConcurrency(String8 useCase, uint32_t state);
+#endif
 protected:
     virtual status_t    dump(int fd, const Vector<String16>& args);
     virtual uint32_t    getVoipMode(int format);
@@ -1237,7 +1248,9 @@ protected:
 #ifdef QCOM_LISTEN_FEATURE_ENABLE
     ListenHardware *mListenHw;
 #endif
-
+#ifdef RESOURCE_MANAGER
+    AudioResourceManager *mAudioResourceManager;
+#endif
 public:
     bool mRouteAudioToExtOut;
 };

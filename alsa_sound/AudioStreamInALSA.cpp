@@ -627,6 +627,7 @@ status_t AudioStreamInALSA::close()
 {
     Mutex::Autolock autoLock(mParent->mLock);
 
+    String8 useCase;
     ALOGD("close");
     if((!strcmp(mHandle->useCase, SND_USE_CASE_VERB_IP_VOICECALL)) ||
         (!strcmp(mHandle->useCase, SND_USE_CASE_MOD_PLAY_VOIP))) {
@@ -644,7 +645,16 @@ status_t AudioStreamInALSA::close()
             }
             ALOGD("mVoipInStreamCount= %d, mParent->mVoipOutStreamCount=%d",
                   mParent->mVoipInStreamCount, mParent->mVoipOutStreamCount);
-
+#ifdef RESOURCE_MANAGER
+            useCase.setTo("USECASE_VOIP_CALL");
+            if(!mParent->mVoipInStreamCount && !mParent->mVoipOutStreamCount) {
+                status_t err = mParent->setParameterForConcurrency(
+                        useCase, AudioHardwareALSA::CONCURRENCY_INACTIVE);
+                //TODO : no error here?, cleanup might not be proper
+                if(err != OK)
+                    return err;
+            }
+#endif
             return NO_ERROR;
         }
         mParent->mVoipMicMute = 0;
@@ -654,6 +664,7 @@ status_t AudioStreamInALSA::close()
         mParent->musbRecordingState &= ~USBRECBIT_REC;
 #endif
      }
+
 #ifdef QCOM_CSDCLIENT_ENABLED
     if (mParent->mFusion3Platform) {
        if((!strcmp(mHandle->useCase, SND_USE_CASE_VERB_INCALL_REC)) ||

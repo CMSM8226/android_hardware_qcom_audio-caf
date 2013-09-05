@@ -144,6 +144,9 @@ AudioHardwareALSA::AudioHardwareALSA() :
     mExtOutThread = NULL;
     mUcMgr = NULL;
     mCanOpenProxy=1;
+#ifdef RESOURCE_MANAGER
+    mAudioResourceManager = NULL;
+#endif
 
 #ifdef QCOM_ACDB_ENABLED
     acdb_deallocate = NULL;
@@ -384,6 +387,14 @@ AudioHardwareALSA::AudioHardwareALSA() :
     }
 #endif
     mTunnelsUsed = 0;
+#ifdef RESOURCE_MANAGER
+    mAudioResourceManager = new AudioResourceManager(this);
+    status_t err = mAudioResourceManager->initCheck();
+    if(err != OK) {
+        delete mAudioResourceManager;
+        mAudioResourceManager = NULL;
+    }
+#endif
 }
 
 AudioHardwareALSA::~AudioHardwareALSA()
@@ -436,6 +447,12 @@ AudioHardwareALSA::~AudioHardwareALSA()
     if (mListenHw) {
         delete mListenHw;
         mListenHw = NULL;
+    }
+#endif
+#ifdef RESOURCE_MANAGER
+    if(mAudioResourceManager) {
+        delete mAudioResourceManager;
+        mAudioResourceManager = NULL;
     }
 #endif
 }
@@ -726,7 +743,15 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
        }
     }
 #endif
-
+#ifdef RESOURCE_MANAGER
+    if(mAudioResourceManager) {
+        ALOGD("AudioResourceManager - setParameter");
+        status = mAudioResourceManager->setParameter(keyValuePairs);
+        if(status != NAME_NOT_FOUND) {
+            return status;
+        }
+    }
+#endif
     key = String8(TTY_MODE_KEY);
     if (param.get(key, value) == NO_ERROR) {
         mDevSettingsFlag &= TTY_CLEAR;
@@ -1031,6 +1056,7 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
     }
 
     if (status != NO_ERROR || param.size()) {
+        ALOGV("status = %d, param.size =%d", status, param.size());
         status = BAD_VALUE;
     }
     return status;
@@ -1136,14 +1162,22 @@ String8 AudioHardwareALSA::getParameters(const String8& keys)
         }
         param.add(key, value);
     }
+
+#ifndef RESOURCE_MANAGER
     key = String8("tunneled-input-formats");
-    if ( param.get(key,value) == NO_ERROR ) {
-        int newMode = mode();
-        if(newMode != AUDIO_MODE_IN_COMMUNICATION && newMode != AUDIO_MODE_IN_CALL){
-            ALOGD("Add tunnel AWB to audio parameter");
-            param.addInt(String8("AWB"), true );
+    char tunnelSupported[PROPERTY_VALUE_MAX] = "false";
+    property_get("tunnel.audio.encode",tunnelSupported,"0");
+    if (!strncmp("true", tunnelSupported, 4)) {
+        if ( param.get(key,value) == NO_ERROR ) {
+            int newMode = mode();
+            if(newMode != AUDIO_MODE_IN_COMMUNICATION &&
+                    newMode != AUDIO_MODE_IN_CALL) {
+                ALOGD("Add tunnel AWB to audio parameter");
+                param.addInt(String8("AWB"), true );
+            }
         }
     }
+#endif
 
     key = String8(AudioParameter::keyRouting);
     if (param.get(key, value) == NO_ERROR) {
@@ -1632,6 +1666,16 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
                 }
         }
       if(voipstream_active == false) {
+#ifdef RESOURCE_MANAGER
+         String8 useCase;
+         useCase.setTo("USECASE_VOIP_CALL");
+         status_t err = setParameterForConcurrency(
+                 useCase, AudioHardwareALSA::CONCURRENCY_ACTIVE);
+         if(err != OK) {
+             ALOGE("set-ParameterForConcurrency for USECASE_VOIP_CALL=%d", err);
+             return NULL;
+         }
+#endif
          mVoipOutStreamCount = 0;
          mVoipMicMute = false;
          alsa_handle_t alsa_handle;
@@ -1707,10 +1751,14 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
               ALOGE("Device open failed");
         #ifdef QCOM_LISTEN_FEATURE_ENABLE
               //Notify to listen HAL that voip call is inactive
-            if (mListenHw) {
+              if (mListenHw) {
                   mListenHw->notifyEvent(AUDIO_CAPTURE_INACTIVE);
-            }
+              }
         #endif
+#ifdef RESOURCE_MANAGER
+              status_t err = setParameterForConcurrency(
+                      useCase, AudioHardwareALSA::CONCURRENCY_INACTIVE);
+#endif
               return NULL;
           }
       }
@@ -1820,6 +1868,7 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
             strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_PLAY_MUSIC2, sizeof(alsa_handle.useCase));
         }
         free(use_case);
+
         mDeviceList.push_back(alsa_handle);
         ALSAHandleList::iterator it = mDeviceList.end();
         it--;
@@ -2099,6 +2148,16 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
                 }
         }
         if(voipstream_active == false) {
+#ifdef RESOURCE_MANAGER
+           String8 useCase;
+           useCase.setTo("USECASE_VOIP_CALL");
+           status_t err = setParameterForConcurrency(
+                   useCase, AudioHardwareALSA::CONCURRENCY_ACTIVE);
+           if(err != OK) {
+               ALOGE("set-ParameterForConcurrency for USECASE_VOIP_CALL = %d", err);
+               return NULL;
+           }
+#endif
            mVoipInStreamCount = 0;
            mVoipMicMute = false;
            alsa_handle_t alsa_handle;
@@ -2177,6 +2236,10 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
                    mListenHw->notifyEvent(AUDIO_CAPTURE_INACTIVE);
             }
         #endif
+#ifdef RESOURCE_MANAGER
+               status_t err = setParameterForConcurrency(
+                       useCase, AudioHardwareALSA::CONCURRENCY_INACTIVE);
+#endif
                return NULL;
            }
         }
@@ -2363,6 +2426,7 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
         mDeviceList.push_back(alsa_handle);
         ALSAHandleList::iterator it = mDeviceList.end();
         it--;
+
         //update channel info before do routing
         if(channels) {
             it->channels = AudioSystem::popCount((*channels) &
@@ -2594,7 +2658,7 @@ void AudioHardwareALSA::handleFm(int device)
         }
 
     } else if (!(device & AUDIO_DEVICE_OUT_FM) && mIsFmActive == 1) {
-        //i Stop FM Radio
+        // Stop FM Radio
         ALOGD("Stop FM");
         for(ALSAHandleList::iterator it = mDeviceList.begin();
             it != mDeviceList.end(); ++it) {
@@ -2630,14 +2694,22 @@ void AudioHardwareALSA::disableVoiceCall(int mode, int device, uint32_t vsid)
 {
     char *verb = getUcmVerbForVSID(vsid);
     char *modifier = getUcmModForVSID(vsid);
-
+#ifdef RESOURCE_MANAGER
+    String8 useCase;
+    useCase.setTo("USECASE_VOICE_CALL");
+    status_t err = setParameterForConcurrency(
+            useCase, AudioHardwareALSA::CONCURRENCY_INACTIVE);
+    if(err != OK) {
+        ALOGE("setParameterForConcurrency error for voice call = %d", err);
+        return;
+    }
     if (verb == NULL || modifier == NULL) {
         ALOGE("%s(): Error, verb=%p or modifier=%p is NULL",
               __func__, verb, modifier);
 
             return;
     }
-
+#endif
     for(ALSAHandleList::iterator it = mDeviceList.begin();
          it != mDeviceList.end(); ++it) {
         if((!strncmp(it->useCase, verb,
@@ -2679,6 +2751,16 @@ status_t AudioHardwareALSA::enableVoiceCall(int mode, int device, uint32_t vsid)
     char *use_case;
     char *verb = getUcmVerbForVSID(vsid);
     char *modifier = getUcmModForVSID(vsid);
+#ifdef RESOURCE_MANAGER
+    String8 useCase;
+    useCase.setTo("USECASE_VOICE_CALL");
+    status_t err = setParameterForConcurrency(
+            useCase, AudioHardwareALSA::CONCURRENCY_ACTIVE);
+    if(err != OK) {
+        ALOGE("setParameterForConcurrency error for voice call = %d", err);
+        return err;
+    }
+#endif
 
 #ifdef QCOM_LISTEN_FEATURE_ENABLE
     //Notify to listen HAL that voice call is active
@@ -3659,5 +3741,45 @@ status_t AudioHardwareALSA::setDDPEndpParams(int device)
     return NO_ERROR;
 }
 #endif
+#ifdef RESOURCE_MANAGER
+status_t AudioHardwareALSA::handleFmConcurrency(
+            int32_t device, uint32_t &state) {
+    status_t err = NO_ERROR;
+    if(device && (device & AUDIO_DEVICE_OUT_FM) && !mIsFmActive) {
+        state = AudioHardwareALSA::CONCURRENCY_ACTIVE;
+    }
+    else if (device && !(device & AUDIO_DEVICE_OUT_FM) && mIsFmActive) {
+        state = AudioHardwareALSA::CONCURRENCY_INACTIVE;
+    }
+    else {
+        ALOGW("handleFmConcurrency: Not an FM usecase device = 0x%x,\
+                mIsFmActive = %d", device, mIsFmActive);
+    }
+    return NO_ERROR;
+}
 
+status_t AudioHardwareALSA::setParameterForConcurrency(
+            String8 useCase, uint32_t state) {
+
+    status_t err = NO_ERROR;
+
+    String8 value = (state == AudioHardwareALSA::CONCURRENCY_ACTIVE ?
+                                  String8("true") : String8("false"));
+
+    AudioParameter param = AudioParameter();
+    param.add(useCase, value);
+    err = setParameters(param.toString());
+    if(!err) {
+       ALOGD("setParameter success for usecase = %s", useCase.string());
+    }
+    else if(err == INVALID_OPERATION) {
+        ALOGE("setParameter failed because err = %d", err);
+        ALOGE("Use case cannot be supported because of DSP limitation");
+    }
+    else {
+        ALOGE("setParameter failed with err = %d", err);
+    }
+    return err;
+}
+#endif
 }       // namespace android_audio_legacy
