@@ -179,12 +179,12 @@ AudioHardwareALSA::AudioHardwareALSA() :
            acdb_init();
 
            acdb_reload_vocvol = (int (*)(int, int, int))::dlsym(mAcdbHandle,"acdb_loader_reload_vocvoltable");
-	   if (acdb_reload_vocvol == NULL)
-	       ALOGE("dlsym:Error:%s Loading acdb_reload_vocvol");
+       if (acdb_reload_vocvol == NULL)
+           ALOGE("dlsym:Error:%s Loading acdb_reload_vocvol");
 
            acdb_deallocate = (void (*)())::dlsym(mAcdbHandle,"acdb_loader_deallocate_ACDB");
-	   if (acdb_deallocate == NULL)
-	       ALOGE("dlsym:Error:%s Loading acdb_deallocate");
+       if (acdb_deallocate == NULL)
+           ALOGE("dlsym:Error:%s Loading acdb_deallocate");
            acdb_send_audio_cal =
            (void (*)(int, int))::dlsym(mAcdbHandle,"acdb_loader_send_audio_cal");
         }
@@ -588,7 +588,7 @@ status_t  AudioHardwareALSA::setFmVolume(float value)
     vol  = lrint((value * 0x2000) + 0.5);
 
     ALOGV("setFmVolume(%f)\n", value);
-    ALOGD("Setting FM volume to %d (available range is 0 to 0x2000)\n", vol);
+    ALOGV("Setting FM volume to %d (available range is 0 to 0x2000)\n", vol);
 
     mALSADevice->setFmVolume(vol);
 
@@ -3604,27 +3604,31 @@ void AudioHardwareALSA::extOutThreadFunc() {
 
 void AudioHardwareALSA::setExtOutActiveUseCases_l(uint32_t activeUsecase)
 {
-   mExtOutActiveUseCases |= activeUsecase;
-   ALOGD("mExtOutActiveUseCases = %u, activeUsecase = %u", mExtOutActiveUseCases, activeUsecase);
+    mExtOutActiveUseCases |= activeUsecase;
+    ALOGV("mExtOutActiveUseCases = %u, activeUsecase = %u", mExtOutActiveUseCases, activeUsecase);
 }
 
 uint32_t AudioHardwareALSA::getExtOutActiveUseCases_l()
 {
-   ALOGD("getExtOutActiveUseCases_l: mExtOutActiveUseCases = %u", mExtOutActiveUseCases);
-   return mExtOutActiveUseCases;
+    ALOGV("getExtOutActiveUseCases_l: mExtOutActiveUseCases = %u", mExtOutActiveUseCases);
+    return mExtOutActiveUseCases;
 }
 
 void AudioHardwareALSA::clearExtOutActiveUseCases_l(uint32_t activeUsecase) {
 
-   mExtOutActiveUseCases &= ~activeUsecase;
-   ALOGD("clear - mExtOutActiveUseCases = %u, activeUsecase = %u", mExtOutActiveUseCases, activeUsecase);
+    mExtOutActiveUseCases &= ~activeUsecase;
+    ALOGV("clear - mExtOutActiveUseCases = %u, activeUsecase = %u", mExtOutActiveUseCases, activeUsecase);
 
 }
 
 uint32_t AudioHardwareALSA::useCaseStringToEnum(const char *usecase)
 {
-   ALOGV("useCaseStringToEnum usecase:%s",usecase);
-   uint32_t activeUsecase = USECASE_NONE;
+    ALOGV("useCaseStringToEnum usecase:%s",usecase);
+    uint32_t activeUsecase = USECASE_NONE;
+    if (usecase == NULL) {
+        ALOGE("useCaseStringToEnum: invalid input usecase return USECASE_NONE");
+        return USECASE_NONE;
+    }
 
    if ((!strncmp(usecase, SND_USE_CASE_VERB_HIFI_LOW_POWER,
                     strlen(SND_USE_CASE_VERB_HIFI_LOW_POWER))) ||

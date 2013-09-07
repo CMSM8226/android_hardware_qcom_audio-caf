@@ -28,7 +28,7 @@
 #include <dlfcn.h>
 #include <math.h>
 
-#define LOG_TAG "AudioSessionOutALSA"
+#define LOG_TAG "AudioSessionOut"
 //#define LOG_NDEBUG 0
 #define LOG_NDDEBUG 0
 #include <utils/Log.h>
@@ -213,17 +213,17 @@ status_t AudioSessionOutALSA::setVolume(float left, float right)
     mStreamVol = lrint((volume * 0x2000)+0.5);
 #endif
 
-    ALOGD("Setting stream volume to %d (available range is 0 to 0x2000)\n", mStreamVol);
+    ALOGV("Setting stream volume to %d (available range is 0 to 0x2000)\n", mStreamVol);
     if(mAlsaHandle && mAlsaHandle->handle) {
-        if(!strcmp(mAlsaHandle->useCase, SND_USE_CASE_VERB_HIFI_LOW_POWER) ||
-           !strcmp(mAlsaHandle->useCase, SND_USE_CASE_MOD_PLAY_LPA)) {
-            ALOGD("setLpaVolume(%u)\n", mStreamVol);
-            ALOGD("Setting LPA volume to %d (available range is 0 to 100)\n", mStreamVol);
+        if(!strncmp(mAlsaHandle->useCase, SND_USE_CASE_VERB_HIFI_LOW_POWER, sizeof(SND_USE_CASE_VERB_HIFI_LOW_POWER)) ||
+           !strncmp(mAlsaHandle->useCase, SND_USE_CASE_MOD_PLAY_LPA, sizeof(SND_USE_CASE_MOD_PLAY_LPA))) {
+            ALOGV("setLpaVolume(%u)\n", mStreamVol);
+            ALOGV("Setting LPA volume to %d (available range is 0 to 100)\n", mStreamVol);
             mAlsaHandle->module->setLpaVolume(mAlsaHandle, mStreamVol);
             return status;
         } else if (isTunnelUseCase(mAlsaHandle->useCase)) {
-            ALOGD("setCompressedVolume(%u)\n", mStreamVol);
-            ALOGD("Setting Compressed volume to %d (available range is 0 to 100)\n", mStreamVol);
+            ALOGV("setCompressedVolume(%u)\n", mStreamVol);
+            ALOGV("Setting Compressed volume to %d (available range is 0 to 100)\n", mStreamVol);
             mAlsaHandle->module->setCompressedVolume(mAlsaHandle, mStreamVol);
             return status;
         }
@@ -248,13 +248,26 @@ status_t AudioSessionOutALSA::openAudioSessionDevice(int type, int devices)
         }
         ALOGD("openAudioSessionDevice - LPA status =%d", status);
     } else if (type == TUNNEL_MODE) {
+        char* tunnel_usecase = NULL;
         if ((use_case == NULL) || (!strncmp(use_case, SND_USE_CASE_VERB_INACTIVE,
                                             strlen(SND_USE_CASE_VERB_INACTIVE)))) {
             //for hifi use cases
-            status = openDevice(mParent->getTunnel(true), true, devices);
+            tunnel_usecase = mParent->getTunnel(true);
+            if (tunnel_usecase) {
+                status = openDevice(tunnel_usecase, true, devices);
+            } else {
+                ALOGE("openAudioSessionDevice getTunnel(true) failed, return BAD_VALUE:%d",BAD_VALUE);
+                return BAD_VALUE;
+            }
         } else {
             //for other than hifi use cases
-            status = openDevice(mParent->getTunnel(false), false, devices);
+            tunnel_usecase = mParent->getTunnel(false);
+            if (tunnel_usecase) {
+                status = openDevice(tunnel_usecase, false, devices);
+            } else {
+                ALOGE("openAudioSessionDevice getTunnel(false) failed, return BAD_VALUE:%d",BAD_VALUE);
+                return BAD_VALUE;
+            }
         }
         mTunnelMode = true;
     }
@@ -940,7 +953,6 @@ status_t AudioSessionOutALSA::openDevice(char *useCase, bool bIsUseCase, int dev
 {
     alsa_handle_t alsa_handle;
     status_t status = NO_ERROR;
-    ALOGV("openDevice: E usecase %s", useCase);
     alsa_handle.module      = mAlsaDevice;
     alsa_handle.bufferSize  = mInputBufferSize;
     alsa_handle.devices     = devices;
@@ -958,7 +970,13 @@ SNDRV_PCM_FORMAT_S16_LE : mFormat);
     alsa_handle.rxHandle    = 0;
     alsa_handle.ucMgr       = mUcMgr;
     alsa_handle.session     = this;
-    strlcpy(alsa_handle.useCase, useCase, sizeof(alsa_handle.useCase));
+    if (useCase) {
+        ALOGV("openDevice: usecase %s bIsUseCase:%d devices:%x", useCase, bIsUseCase, devices);
+        strlcpy(alsa_handle.useCase, useCase, sizeof(alsa_handle.useCase));
+    } else {
+        ALOGE("openDevice invalid useCase, return BAD_VALUE:%x",BAD_VALUE);
+        return BAD_VALUE;
+    }
 
     if (bIsUseCase) {
        snd_use_case_set(mUcMgr, "_verb", useCase);
