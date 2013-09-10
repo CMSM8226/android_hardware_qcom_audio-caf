@@ -1110,6 +1110,11 @@ void AudioSessionOutALSA::reset() {
 #ifdef QCOM_USBAUDIO_ENABLED
     mParent->closeUsbPlaybackIfNothingActive();
 #endif
+   if(mAlsaHandle) {
+        ALOGD("closeDevice mAlsaHandle");
+        closeDevice(mAlsaHandle);
+    }
+
     ALOGV("Erase device list");
     for(ALSAHandleList::iterator it = mParent->mDeviceList.begin();
             it != mParent->mDeviceList.end(); ++it) {
@@ -1120,8 +1125,6 @@ void AudioSessionOutALSA::reset() {
     }
 
     if(mAlsaHandle) {
-        ALOGD("closeDevice mAlsaHandle");
-        closeDevice(mAlsaHandle);
         mAlsaHandle = NULL;
     }
     mParent->mLock.unlock();
