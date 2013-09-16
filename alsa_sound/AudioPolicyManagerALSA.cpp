@@ -942,6 +942,9 @@ status_t AudioPolicyManager::startOutput(audio_io_handle_t output,
                             (strategy == STRATEGY_SONIFICATION_RESPECTFUL);
         uint32_t waitMs = 0;
         uint32_t muteWaitMs = 0;
+#ifdef QCOM_APM_VERSION_JBMR2
+        bool isStreamActive = false;
+#endif
 #ifndef QCOM_APM_VERSION_JBMR2
         uint32_t RefCount = 0;
 #endif
@@ -960,6 +963,10 @@ status_t AudioPolicyManager::startOutput(audio_io_handle_t output,
 #ifndef QCOM_APM_VERSION_JBMR2
                 RefCount += desc->refCount();
 #endif
+#ifdef QCOM_APM_VERSION_JBMR2
+        isStreamActive = desc->isStreamActive(AudioSystem::MUSIC);
+        ALOGD("isStreamActive: %u", isStreamActive);
+#endif
                 // wait for audio on other active outputs to be presented when starting
                 // a notification so that audio focus effect can propagate.
 #ifdef QCOM_APM_VERSION_JBMR2
@@ -975,6 +982,11 @@ status_t AudioPolicyManager::startOutput(audio_io_handle_t output,
         }
 #ifndef QCOM_APM_VERSION_JBMR2
         if(RefCount==0){
+           force = true;
+        }
+#endif
+#ifdef QCOM_APM_VERSION_JBMR2
+        if (isStreamActive == false) {
            force = true;
         }
 #endif
