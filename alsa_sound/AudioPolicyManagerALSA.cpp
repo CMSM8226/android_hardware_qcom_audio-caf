@@ -70,6 +70,7 @@ namespace android_audio_legacy {
 // ----------------------------------------------------------------------------
 
 AudioParameter param;
+static float mLastALSAvoiceVolume = -1.0f ;
 
 
 uint32_t AudioPolicyManager::checkDeviceMuteStrategies(AudioOutputDescriptor *outputDesc,
@@ -2207,12 +2208,6 @@ status_t AudioPolicyManager::checkAndSetVolume(int stream,
     if (stream == AudioSystem::VOICE_CALL ||
         stream == AudioSystem::BLUETOOTH_SCO) {
         float voiceVolume;
-        // Force voice volume to max for bluetooth SCO as volume is managed by the headset
-        if (stream == AudioSystem::VOICE_CALL) {
-            voiceVolume = (float)index/(float)mStreams[stream].mIndexMax;
-        } else {
-            voiceVolume = 1.0;
-        }
 
         voiceVolume = (float)index/(float)mStreams[stream].mIndexMax;
 
@@ -2228,9 +2223,11 @@ status_t AudioPolicyManager::checkAndSetVolume(int stream,
             }
         }
 
-        if (voiceVolume != mLastVoiceVolume && output == mPrimaryOutput) {
+        if (voiceVolume != mLastALSAvoiceVolume && output == mPrimaryOutput) {
             mpClientInterface->setVoiceVolume(voiceVolume, delayMs);
-            mLastVoiceVolume = voiceVolume;
+            //Cache the voiceVolume only when in Call
+            if (isInCall())
+                mLastALSAvoiceVolume = voiceVolume;
         }
     }
 
