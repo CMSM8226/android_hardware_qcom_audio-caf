@@ -2468,17 +2468,51 @@ void ALSADevice::setVoipConfig(int mode, int rate)
 
     setValues[1] = (char*)malloc(8*sizeof(char));
     if (setValues[1] == NULL) {
-          free(setValues);
           free(setValues[0]);
+          free(setValues);
           return;
     }
 
-    sprintf(setValues[0], "%d",mode);
-    sprintf(setValues[1], "%d",rate);
+    snprintf(setValues[0], (4*sizeof(char)), "%d", mode);
+    snprintf(setValues[1], (8*sizeof(char)), "%d", rate);
 
     setMixerControlExt("Voip Mode Rate Config", 2, setValues);
-    free(setValues[1]);
+
     free(setValues[0]);
+    free(setValues[1]);
+    free(setValues);
+    return;
+}
+
+void ALSADevice::setVoipEvrcMinMaxRate(int minRate, int maxRate)
+{
+    char** setValues;
+    ALOGD("setVoipEvrcMinMaxRate(): minRate %d, maxRate %d", minRate, maxRate);
+
+    setValues = (char**)malloc(2*sizeof(char*));
+    if (setValues == NULL) {
+          return;
+    }
+    setValues[0] = (char*)malloc(8*sizeof(char));
+    if (setValues[0] == NULL) {
+          free(setValues);
+          return;
+    }
+
+    setValues[1] = (char*)malloc(8*sizeof(char));
+    if (setValues[1] == NULL) {
+          free(setValues[0]);
+          free(setValues);
+          return;
+    }
+
+    snprintf(setValues[0], (8*sizeof(char)), "%d", minRate);
+    snprintf(setValues[1], (8*sizeof(char)), "%d", maxRate);
+
+    setMixerControlExt("Voip Evrc Min Max Rate Config", 2, setValues);
+
+    free(setValues[0]);
+    free(setValues[1]);
     free(setValues);
     return;
 }

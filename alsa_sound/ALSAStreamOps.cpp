@@ -63,6 +63,8 @@ ALSAStreamOps::~ALSAStreamOps()
         }
         mParent->mVoipMicMute = 0;
         mParent->mVoipBitRate = 0;
+        mParent->mVoipEvrcBitRateMin = 0;
+        mParent->mVoipEvrcBitRateMax = 0;
     }
     close();
 
@@ -536,6 +538,8 @@ void ALSAStreamOps::close()
        (!strncmp(mHandle->useCase, SND_USE_CASE_MOD_PLAY_VOIP, strlen(SND_USE_CASE_MOD_PLAY_VOIP)))) {
        mParent->mVoipMicMute = false;
        mParent->mVoipBitRate = 0;
+       mParent->mVoipEvrcBitRateMin = 0;
+       mParent->mVoipEvrcBitRateMax = 0;
        mParent->mVoipInStreamCount = 0;
        mParent->mVoipOutStreamCount = 0;
     }
