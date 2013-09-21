@@ -138,6 +138,8 @@ class AudioResourceManager;
 #define ALL_CALL_STATES_KEY "all_call_states"
 #define CUSTOM_STEREO_KEY   "stereo_as_dual_mono"
 #define VOIP_DTX_MODE_KEY   "dtx_on"
+#define EVRC_RATE_MIN_KEY   "evrc_rate_min"
+#define EVRC_RATE_MAX_KEY   "evrc_rate_max"
 
 #define ANC_FLAG        0x00000001
 #define DMIC_FLAG       0x00000002
@@ -471,6 +473,7 @@ public:
     void     setMicMute(int state);
     void     setVoipMicMute(int state);
     void     setVoipConfig(int mode, int rate);
+    void     setVoipEvrcMinMaxRate(int minRate, int maxRate);
     void     enableVoipDtx(bool flag);
     status_t setFmVolume(int vol);
     void     setBtscoRate(int rate);
@@ -1192,6 +1195,8 @@ protected:
     uint32_t            mVoipOutStreamCount;
     bool                mVoipMicMute;
     uint32_t            mVoipBitRate;
+    uint32_t            mVoipEvrcBitRateMin;
+    uint32_t            mVoipEvrcBitRateMax;
     uint32_t            mIncallMode;
 
     bool                mMicMute;

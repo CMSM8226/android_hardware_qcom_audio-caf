@@ -97,7 +97,8 @@ AudioHardwareInterface *AudioHardwareALSA::create() {
 
 AudioHardwareALSA::AudioHardwareALSA() :
     mALSADevice(0),mVoipInStreamCount(0),mVoipOutStreamCount(0),mVoipMicMute(false),
-    mVoipBitRate(0),mCallState(0),mAcdbHandle(NULL),mCsdHandle(NULL),mMicMute(0)
+    mVoipBitRate(0),mCallState(0),mAcdbHandle(NULL),mCsdHandle(NULL),mMicMute(0),
+    mVoipEvrcBitRateMin(0),mVoipEvrcBitRateMax(0)
 {
     FILE *fp;
     char soundCardInfo[200];
@@ -950,7 +951,9 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
 
     key = String8(VOIPRATE_KEY);
     if (param.get(key, value) == NO_ERROR) {
-            mVoipBitRate = atoi(value);
+        mVoipBitRate = atoi(value);
+        mVoipEvrcBitRateMin = mVoipBitRate;
+        mVoipEvrcBitRateMax = mVoipBitRate;
         param.remove(key);
     }
 
@@ -1066,6 +1069,23 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
         ALOGV("%s(): voip dtx mode: %d", __func__, flag);
 
         mALSADevice->enableVoipDtx(flag);
+        param.remove(key);
+    }
+
+    key = String8(EVRC_RATE_MIN_KEY);
+    if (param.get(key, value) == NO_ERROR) {
+        uint32_t minRate;
+        minRate = atoi(value);
+        param.remove(key);
+        key = String8(EVRC_RATE_MAX_KEY);
+        if (param.get(key, value) == NO_ERROR) {
+            mVoipEvrcBitRateMax = atoi(value);
+            mVoipEvrcBitRateMin = minRate;
+            ALOGV("%s(): EVRC min rate %d, max rate %d",
+                   __func__, mVoipEvrcBitRateMin, mVoipEvrcBitRateMax);
+
+            mALSADevice->setVoipEvrcMinMaxRate(mVoipEvrcBitRateMin, mVoipEvrcBitRateMax);
+        }
         param.remove(key);
     }
 
@@ -1719,6 +1739,7 @@ AudioHardwareALSA::openOutputStream(uint32_t devices,
           alsa_handle.rxHandle = 0;
           alsa_handle.ucMgr = mUcMgr;
           mALSADevice->setVoipConfig(getVoipMode(*format), mVoipBitRate);
+          mALSADevice->setVoipEvrcMinMaxRate(mVoipEvrcBitRateMin, mVoipEvrcBitRateMax);
           char *use_case;
           snd_use_case_get(mUcMgr, "_verb", (const char **)&use_case);
           if ((use_case == NULL) || (!strcmp(use_case, SND_USE_CASE_VERB_INACTIVE))) {
@@ -2200,7 +2221,8 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
            alsa_handle.latency = VOIP_RECORD_LATENCY;
            alsa_handle.rxHandle = 0;
            alsa_handle.ucMgr = mUcMgr;
-          mALSADevice->setVoipConfig(getVoipMode(*format), mVoipBitRate);
+           mALSADevice->setVoipConfig(getVoipMode(*format), mVoipBitRate);
+           mALSADevice->setVoipEvrcMinMaxRate(mVoipEvrcBitRateMin, mVoipEvrcBitRateMax);
            snd_use_case_get(mUcMgr, "_verb", (const char **)&use_case);
            if ((use_case != NULL) && (strcmp(use_case, SND_USE_CASE_VERB_INACTIVE))) {
                 strlcpy(alsa_handle.useCase, SND_USE_CASE_MOD_PLAY_VOIP, sizeof(alsa_handle.useCase));
