@@ -1057,6 +1057,18 @@ status_t AudioHardwareALSA::setParameters(const String8& keyValuePairs)
         param.remove(key);
     }
 
+    key = String8(VOIP_DTX_MODE_KEY);
+    if (param.get(key, value) == NO_ERROR) {
+        bool flag = false;
+        if (value == "true") {
+            flag = true;
+        }
+        ALOGV("%s(): voip dtx mode: %d", __func__, flag);
+
+        mALSADevice->enableVoipDtx(flag);
+        param.remove(key);
+    }
+
     if (status != NO_ERROR || param.size()) {
         ALOGV("status = %d, param.size =%d", status, param.size());
         status = BAD_VALUE;
