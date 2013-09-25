@@ -80,6 +80,8 @@ extern "C" {
 #define DEVICE_USB_TX_ACDB_ID                           44// USB_Tx
 #define DEVICE_CAMCORDER_TX_ACDB_ID                     61// CAMCORDER_TX
 #define DEVICE_VOICE_RECOGNITION_ACDB_ID                62// VOICE_RECOGNITION
+#define DEVICE_HANDSET_MONO_LISTEN_LOW_POWER_ACDB_ID    100
+#define DEVICE_HANDSET_MONO_LISTEN_HIGH_POWER_ACDB_ID   127
 
 /* mixer control type */
 #define TYPE_INT            0
@@ -331,6 +333,7 @@ static card_mapping_t card_mapping_list[] = {
 #define SND_USE_CASE_DEV_AANC_LINE          "AANC Line"
 #define SND_USE_CASE_DEV_AANC_DMIC_ENDFIRE  "AANC DMIC Endfire"
 #define SND_USE_CASE_DEV_SPEAKER_PROTECTED	"Speaker Protected"
+#define SND_USE_CASE_DEV_HANDSET_MONO_LISTEN_HIGH_POWER "ListenHandsetMic"
 
 #define SND_USE_CASE_MOD_SPKR_PROT_TX   "VI Capture Mod"
 #define SND_USE_CASE_MOD_PLAY_FM         "Play FM"
