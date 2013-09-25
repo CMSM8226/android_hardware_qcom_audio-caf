@@ -3077,7 +3077,7 @@ status_t ALSADevice::startProxy() {
            break;
        }
    }
-   ALOGD("startProxy - Proxy started");
+   ALOGV("startProxy - Proxy started");
    capture_handle->start = 1;
    capture_handle->sync_ptr->flags = SNDRV_PCM_SYNC_PTR_APPL |
                SNDRV_PCM_SYNC_PTR_AVAIL_MIN;
